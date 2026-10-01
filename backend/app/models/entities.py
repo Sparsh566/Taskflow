@@ -267,3 +267,19 @@ class ActivityLog(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     user = relationship("User", foreign_keys=[user_id])
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    sender_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    receiver_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    channel = Column(String(50), default="direct", nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    attachment_url = Column(String(500), nullable=True)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])
+

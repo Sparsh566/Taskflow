@@ -17,7 +17,7 @@ export default function VerificationModal({
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [reviewing, setReviewing] = useState(false);
   const [simulating, setSimulating] = useState(false);
-  const [simType, setSimType] = useState('good'); // 'good' or 'spam'
+  const [simType, setSimType] = useState('good');
 
   useEffect(() => {
     if (task) {
@@ -73,7 +73,6 @@ export default function VerificationModal({
           ]
         }];
       } else {
-        // Spam / Insignificant commit simulation
         commitPayload = [{
           commit_sha: 'spam-' + Math.random().toString(16).substring(2, 10),
           commit_message: 'update',
@@ -106,36 +105,36 @@ export default function VerificationModal({
   const isHighQuality = score >= 75;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl p-6 sm:p-8 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-[#e8e4da] shadow-2xl p-6 sm:p-8 flex flex-col text-slate-800">
         
         {/* Header */}
-        <div className="flex items-start justify-between pb-6 border-b border-slate-800">
+        <div className="flex items-start justify-between pb-5 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                task.status === 'under_review' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                task.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                task.status === 'blocked' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                'bg-blue-500/20 text-blue-300'
+              <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                task.status === 'under_review' ? 'bg-pink-100 text-pink-700' :
+                task.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                task.status === 'blocked' ? 'bg-rose-100 text-rose-700' :
+                'bg-blue-100 text-blue-700'
               }`}>
                 Status: {task.status.replace('_', ' ')}
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 font-medium">
                 Created by: {task.creator?.full_name || 'Manager'}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white font-['Outfit']">
+            <h2 className="text-2xl font-black text-slate-900 font-['Outfit']">
               {task.title}
             </h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
               {task.description}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -145,33 +144,31 @@ export default function VerificationModal({
         <div className="py-6 space-y-6 flex-1">
           
           {/* Automated Heuristic Verification Telemetry Card */}
-          <div className="glass-panel p-6 rounded-2xl border border-indigo-500/20 relative overflow-hidden">
+          <div className="p-6 rounded-3xl bg-[#fdf2f4] border border-[#f9d6dd] relative overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">
-                    Automated Work Verification Heuristics
-                  </span>
+                <div className="flex items-center gap-2 mb-1 text-pink-700 text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Automated Work Verification Heuristics</span>
                 </div>
-                <div className="text-sm font-semibold text-slate-200">
+                <div className="text-sm font-bold text-slate-900">
                   Calculated Significance & Evidence Compliance Score
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Evaluates code changes, filters whitespace/comment spam, and verifies deliverables against acceptance criteria.
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Filters whitespace manipulations, flags repetitive commits, and validates deliverables.
                 </p>
               </div>
 
               {/* Score Gauge */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-2xl border border-pink-200 shadow-sm shrink-0">
                 <div className="text-right">
                   <div className={`text-3xl font-black font-['Outfit'] ${
-                    isHighQuality ? 'text-emerald-400' : 'text-amber-400'
+                    isHighQuality ? 'text-emerald-700' : 'text-amber-700'
                   }`}>
                     {score}/100
                   </div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {summary?.recommended_verdict?.replace('_', ' ') || 'Calculating...'}
+                    {summary?.recommended_verdict?.replace('_', ' ') || 'Analyzing...'}
                   </div>
                 </div>
               </div>
@@ -179,14 +176,14 @@ export default function VerificationModal({
 
             {/* Risk Flags */}
             {summary?.flags && summary.flags.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">Engine Flags:</span>
+              <div className="mt-4 pt-4 border-t border-pink-200/60 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-700">Flagged Conditions:</span>
                 {summary.flags.map((flag, idx) => (
                   <span
                     key={idx}
-                    className="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-500/30 flex items-center gap-1"
+                    className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-white text-rose-700 border border-rose-200 shadow-xs flex items-center gap-1"
                   >
-                    <AlertCircle className="w-3 h-3" />
+                    <AlertCircle className="w-3 h-3 text-rose-600" />
                     {flag.replace(/_/g, ' ')}
                   </span>
                 ))}
@@ -194,38 +191,38 @@ export default function VerificationModal({
             )}
           </div>
 
-          {/* Section: Technical GitHub Evidence (If technical task) */}
+          {/* Section: Technical GitHub Evidence */}
           {task.verification_type === 'github_code' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <GitBranch className="w-4 h-4 text-blue-400" />
-                  <h3 className="text-sm font-bold text-white font-['Outfit']">
+                  <GitBranch className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-bold text-slate-900 font-['Outfit']">
                     GitHub Code Evidence & Commits
                   </h3>
                 </div>
-                <span className="text-xs text-slate-400">
-                  Branch: <code className="text-indigo-400 bg-slate-950 px-2 py-0.5 rounded">{task.github_link?.branch_name || 'main'}</code>
+                <span className="text-xs text-slate-500">
+                  Branch: <code className="text-blue-700 bg-slate-100 px-2 py-0.5 rounded-full font-mono">{task.github_link?.branch_name || 'main'}</code>
                 </span>
               </div>
 
               {/* Commits List */}
               <div className="space-y-2">
                 {task.github_link?.commits?.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-500 text-center">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-500 text-center">
                     No commits captured yet for this task.
                   </div>
                 ) : (
                   task.github_link?.commits?.map((commit) => (
                     <div
                       key={commit.id}
-                      className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs"
+                      className="p-3.5 rounded-2xl bg-white border border-[#e8e4da] shadow-xs flex items-center justify-between text-xs"
                     >
                       <div className="flex items-start gap-3">
                         <GitCommit className="w-4 h-4 text-slate-400 mt-0.5" />
                         <div>
-                          <span className="font-semibold text-slate-200">{commit.commit_message}</span>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5 font-mono">
+                          <span className="font-bold text-slate-900">{commit.commit_message}</span>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
                             <span>{commit.commit_sha?.substring(0, 7)}</span>
                             <span>•</span>
                             <span>by {commit.author_github_login}</span>
@@ -234,13 +231,13 @@ export default function VerificationModal({
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <span className="text-emerald-400 font-mono font-bold">+{commit.additions}</span>
-                        <span className="text-rose-400 font-mono font-bold">-{commit.deletions}</span>
+                        <span className="text-emerald-700 font-mono font-bold">+{commit.additions}</span>
+                        <span className="text-rose-700 font-mono font-bold">-{commit.deletions}</span>
                         {commit.analysis && (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                             commit.analysis.heuristic_significance_score >= 70
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-amber-500/20 text-amber-300'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
                           }`}>
                             Score: {commit.analysis.heuristic_significance_score}
                           </span>
@@ -251,18 +248,18 @@ export default function VerificationModal({
                 )}
               </div>
 
-              {/* Commit Simulator Panel (For interactive testing of verification engine) */}
-              <div className="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Commit Simulator Panel */}
+              <div className="p-4 rounded-3xl bg-[#f4f2ec] border border-[#e5e1d5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold text-indigo-300">Live Commit Simulation</div>
-                  <div className="text-[11px] text-slate-400">Test how the verification engine analyzes clean commits vs whitespace/comment churn.</div>
+                  <div className="text-xs font-bold text-slate-900">Live Commit Simulation Engine</div>
+                  <div className="text-[11px] text-slate-500">Test how clean code vs whitespace churn re-evaluates significance.</div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <select
                     value={simType}
                     onChange={(e) => setSimType(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none"
+                    className="bg-white border border-slate-200 text-xs text-slate-800 rounded-full px-3 py-1.5 focus:outline-none shadow-xs"
                   >
                     <option value="good">Legitimate Code (+84 lines)</option>
                     <option value="spam">Trivial / Whitespace Churn</option>
@@ -270,7 +267,7 @@ export default function VerificationModal({
                   <button
                     onClick={handleSimulateCommit}
                     disabled={simulating}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
+                    className="px-4 py-1.5 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
                   >
                     {simulating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <GitCommit className="w-3.5 h-3.5" />}
                     Simulate Push
@@ -280,34 +277,33 @@ export default function VerificationModal({
             </div>
           )}
 
-          {/* Section: Non-Technical Deliverables & Evidence */}
+          {/* Section: Non-Technical Deliverables */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-bold text-white font-['Outfit']">
+              <FileText className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-sm font-bold text-slate-900 font-['Outfit']">
                 Submitted Deliverables & Documents ({task.evidence_submissions?.length || 0})
               </h3>
             </div>
 
             {task.evidence_submissions?.length === 0 ? (
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-500 text-center">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-500 text-center">
                 No deliverable files or documents submitted yet.
               </div>
             ) : (
               task.evidence_submissions?.map((ev) => (
-                <div key={ev.id} className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Submitted by <b className="text-slate-200">{ev.submitter?.full_name}</b></span>
+                <div key={ev.id} className="p-4 rounded-3xl bg-white border border-[#e8e4da] shadow-xs space-y-3">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Submitted by <b className="text-slate-800">{ev.submitter?.full_name}</b></span>
                     <span>{new Date(ev.created_at).toLocaleDateString()}</span>
                   </div>
 
                   {ev.submission_notes && (
-                    <p className="text-xs text-slate-300 italic bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                    <p className="text-xs text-slate-700 italic bg-slate-50 p-3 rounded-2xl border border-slate-100">
                       "{ev.submission_notes}"
                     </p>
                   )}
 
-                  {/* Documents & links */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {ev.documents?.map((doc) => (
                       <a
@@ -315,13 +311,13 @@ export default function VerificationModal({
                         href={doc.file_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 flex items-center justify-between text-xs text-slate-200 transition-colors group"
+                        className="p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-400 flex items-center justify-between text-xs text-slate-900 transition-colors group"
                       >
                         <div className="flex items-center gap-2.5 truncate">
-                          <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
+                          <FileText className="w-4 h-4 text-pink-600 shrink-0" />
                           <span className="truncate font-semibold">{doc.title}</span>
                         </div>
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 shrink-0" />
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-900 shrink-0" />
                       </a>
                     ))}
                   </div>
@@ -333,8 +329,8 @@ export default function VerificationModal({
           {/* Section: Acceptance Criteria Checklist */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <CheckSquare className="w-4 h-4 text-purple-400" />
-              <h3 className="text-sm font-bold text-white font-['Outfit']">
+              <CheckSquare className="w-4 h-4 text-purple-600" />
+              <h3 className="text-sm font-bold text-slate-900 font-['Outfit']">
                 Acceptance Criteria Verification
               </h3>
             </div>
@@ -343,14 +339,14 @@ export default function VerificationModal({
               {task.acceptance_criteria?.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs"
+                  className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#e8e4da] shadow-xs text-xs"
                 >
                   <div className={`mt-0.5 w-4 h-4 rounded-md flex items-center justify-center ${
-                    item.completed ? 'bg-emerald-500 text-white' : 'border border-slate-700 bg-slate-900'
+                    item.completed ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-slate-50'
                   }`}>
                     {item.completed && <CheckCircle2 className="w-3.5 h-3.5" />}
                   </div>
-                  <span className={item.completed ? 'text-slate-300 line-through' : 'text-slate-200'}>
+                  <span className={item.completed ? 'text-slate-400 line-through' : 'text-slate-800 font-medium'}>
                     {item.text}
                   </span>
                 </div>
@@ -362,17 +358,17 @@ export default function VerificationModal({
 
         {/* Manager Review Controls Footer */}
         {isManagerOrAdmin && task.status === 'under_review' && (
-          <div className="pt-6 border-t border-slate-800 space-y-4">
+          <div className="pt-6 border-t border-slate-100 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Manager Review Feedback & Verification Notes
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Manager Review Feedback & Verification Verdict Notes
               </label>
               <textarea
                 rows={2}
-                placeholder="Provide constructive feedback or approval notes for the employee..."
+                placeholder="Provide feedback or sign-off approval notes for the employee..."
                 value={feedbackNotes}
                 onChange={(e) => setFeedbackNotes(e.target.value)}
-                className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-800"
               />
             </div>
 
@@ -380,16 +376,16 @@ export default function VerificationModal({
               <button
                 onClick={() => handleReview('manager_rejected')}
                 disabled={reviewing}
-                className="px-4 py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 text-xs font-bold transition-all"
+                className="px-4 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all"
               >
                 Reject & Request Revisions
               </button>
               <button
                 onClick={() => handleReview('manager_approved')}
                 disabled={reviewing}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all flex items-center gap-2"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 Approve & Mark Complete
               </button>
             </div>

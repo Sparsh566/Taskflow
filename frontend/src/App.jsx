@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import TopBar from './components/TopBar';
 import ManagerDashboard from './components/ManagerDashboard';
+import ScheduleView from './components/ScheduleView';
 import TaskBoard from './components/TaskBoard';
 import TeamDirectory from './components/TeamDirectory';
 import VerificationModal from './components/VerificationModal';
@@ -31,7 +33,6 @@ export default function App() {
   const loginAs = async (email, password = 'manager123') => {
     try {
       setLoading(true);
-      // Determine password for seed users
       let pwd = password;
       if (email.startsWith('admin')) pwd = 'admin123';
       else if (email.includes('.dev') || email.includes('.ai') || email.includes('.growth')) pwd = 'emp123';
@@ -56,12 +57,10 @@ export default function App() {
       setTasks(tasksRes);
       setNotifications(notifsRes);
 
-      // Fetch analytics (if manager or admin)
       try {
         const analyticsRes = await api.getDashboardAnalytics();
         setAnalytics(analyticsRes);
       } catch (err) {
-        // Normal for employees if restricted
         setAnalytics(null);
       }
     } catch (err) {
@@ -89,11 +88,11 @@ export default function App() {
 
   if (loading && !currentUser) {
     return (
-      <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center text-slate-400 font-['Outfit']">
+      <div className="min-h-screen w-full bg-[#f6f4ee] flex items-center justify-center text-slate-700 font-['Outfit']">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 animate-spin flex items-center justify-center shadow-xl shadow-indigo-600/40" />
-          <p className="text-sm font-semibold tracking-wide text-slate-300">
-            Initializing TaskFlow Telemetry Engine...
+          <div className="w-10 h-10 rounded-2xl bg-[#141518] animate-spin flex items-center justify-center shadow-lg" />
+          <p className="text-sm font-bold tracking-wide text-slate-800">
+            Initializing TaskFlow Telemetry...
           </p>
         </div>
       </div>
@@ -101,49 +100,127 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100">
+    <div className="min-h-screen w-full bg-[#f6f4ee] flex flex-row text-slate-900 font-['Inter']">
       
-      {/* Top Header & Navigation */}
-      <Header
-        currentUser={currentUser}
-        onSwitchUser={(email) => loginAs(email)}
-        notifications={notifications}
-        onMarkNotificationRead={handleMarkNotificationRead}
-        onOpenCreateTask={() => setShowCreateModal(true)}
+      {/* Matte Black Left Sidebar from reference UI */}
+      <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        currentUser={currentUser}
+        onSwitchUser={(email) => loginAs(email)}
       />
 
-      {/* Main Content View Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 pr-4">
         
-        {activeTab === 'dashboard' && (
-          <ManagerDashboard
-            analytics={analytics}
-            tasks={tasks}
-            onSelectTask={(task) => setSelectedTask(task)}
-            onOpenCreateTask={() => setShowCreateModal(true)}
-            currentUser={currentUser}
-          />
-        )}
+        {/* Top Search & Actions Bar */}
+        <TopBar
+          onOpenCreateTask={() => setShowCreateModal(true)}
+          notifications={notifications}
+          onMarkNotificationRead={handleMarkNotificationRead}
+          currentUser={currentUser}
+        />
 
-        {activeTab === 'tasks' && (
-          <TaskBoard
-            tasks={tasks}
-            onSelectTask={(task) => setSelectedTask(task)}
-            onStartTask={handleStartTask}
-            onOpenSubmitEvidence={(task) => setEvidenceTask(task)}
-            onOpenBlockerModal={(task) => setBlockerTask(task)}
-            onOpenCreateTask={() => setShowCreateModal(true)}
-            currentUser={currentUser}
-          />
-        )}
+        {/* Dynamic View Container */}
+        <main className="flex-1 px-6 py-4">
+          
+          {activeTab === 'dashboard' && (
+            <ManagerDashboard
+              analytics={analytics}
+              tasks={tasks}
+              onSelectTask={(task) => setSelectedTask(task)}
+              currentUser={currentUser}
+            />
+          )}
 
-        {activeTab === 'team' && (
-          <TeamDirectory />
-        )}
+          {activeTab === 'schedule' && (
+            <ScheduleView
+              tasks={tasks}
+              currentUser={currentUser}
+              onSelectTask={(task) => setSelectedTask(task)}
+              onOpenCreateTask={() => setShowCreateModal(true)}
+            />
+          )}
 
-      </main>
+          {activeTab === 'tasks' && (
+            <TaskBoard
+              tasks={tasks}
+              onSelectTask={(task) => setSelectedTask(task)}
+              onStartTask={handleStartTask}
+              onOpenSubmitEvidence={(task) => setEvidenceTask(task)}
+              onOpenBlockerModal={(task) => setBlockerTask(task)}
+              onOpenCreateTask={() => setShowCreateModal(true)}
+              currentUser={currentUser}
+            />
+          )}
+
+          {activeTab === 'team' && (
+            <TeamDirectory />
+          )}
+
+          {activeTab === 'verification' && (
+            <div className="space-y-6">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 font-['Outfit']">
+                Work Verification Workbench
+              </h1>
+              <p className="text-xs text-slate-500">
+                Select any task below to inspect code diff heuristics, commit frequency, or deliverable compliance.
+              </p>
+              <TaskBoard
+                tasks={tasks}
+                onSelectTask={(task) => setSelectedTask(task)}
+                onStartTask={handleStartTask}
+                onOpenSubmitEvidence={(task) => setEvidenceTask(task)}
+                onOpenBlockerModal={(task) => setBlockerTask(task)}
+                onOpenCreateTask={() => setShowCreateModal(true)}
+                currentUser={currentUser}
+              />
+            </div>
+          )}
+
+          {activeTab === 'github' && (
+            <div className="space-y-6">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 font-['Outfit']">
+                GitHub Repositories & Pull Request Links
+              </h1>
+              <p className="text-xs text-slate-500">
+                Connected repositories: <code>taskflow-org/core-platform</code>
+              </p>
+              <TaskBoard
+                tasks={tasks.filter(t => t.verification_type === 'github_code')}
+                onSelectTask={(task) => setSelectedTask(task)}
+                onStartTask={handleStartTask}
+                onOpenSubmitEvidence={(task) => setEvidenceTask(task)}
+                onOpenBlockerModal={(task) => setBlockerTask(task)}
+                onOpenCreateTask={() => setShowCreateModal(true)}
+                currentUser={currentUser}
+              />
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 font-['Outfit']">
+                Documents & Non-Technical Deliverables Base
+              </h1>
+              <p className="text-xs text-slate-500">
+                Deliverables, PDFs, checklists, and executive slide decks.
+              </p>
+              <TaskBoard
+                tasks={tasks.filter(t => t.verification_type !== 'github_code')}
+                onSelectTask={(task) => setSelectedTask(task)}
+                onStartTask={handleStartTask}
+                onOpenSubmitEvidence={(task) => setEvidenceTask(task)}
+                onOpenBlockerModal={(task) => setBlockerTask(task)}
+                onOpenCreateTask={() => setShowCreateModal(true)}
+                currentUser={currentUser}
+              />
+            </div>
+          )}
+
+        </main>
+
+      </div>
 
       {/* Verification Inspector Modal */}
       {selectedTask && (
@@ -173,7 +250,7 @@ export default function App() {
         />
       )}
 
-      {/* Blocker Escalation Modal */}
+      {/* Blocker Modal */}
       {blockerTask && (
         <BlockerModal
           task={blockerTask}
@@ -181,11 +258,6 @@ export default function App() {
           onReported={loadAppTelemetry}
         />
       )}
-
-      {/* Bottom Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>TaskFlow — Employee Task Management & Objective Work Verification Platform © 2026</p>
-      </footer>
 
     </div>
   );

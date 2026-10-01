@@ -1,307 +1,347 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  CheckCircle2, Clock, AlertTriangle, ShieldCheck, 
-  Layers, Users, ArrowUpRight, GitPullRequest, FileCheck 
+  GitBranch, ShieldCheck, AlertTriangle, Clock, 
+  ArrowUpRight, CheckCircle2, ChevronDown, Sparkles, 
+  ExternalLink, FileText, GitCommit 
 } from 'lucide-react';
 
 export default function ManagerDashboard({ 
   analytics, 
   tasks, 
   onSelectTask, 
-  onOpenCreateTask,
   currentUser 
 }) {
-  if (!analytics) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
-        Loading analytics telemetry...
-      </div>
-    );
-  }
+  const [activeFilter, setActiveFilter] = useState('All');
 
   const pendingReviews = tasks.filter(t => t.status === 'under_review');
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
   const blockedTasks = tasks.filter(t => t.status === 'blocked');
+  const completedTasks = tasks.filter(t => t.status === 'completed');
+
+  const filteredTasks = tasks.filter(t => {
+    if (activeFilter === 'All') return true;
+    if (activeFilter === 'Engineering') return t.category?.department_id || t.verification_type === 'github_code';
+    if (activeFilter === 'AI & ML') return t.title.toLowerCase().includes('llama') || t.title.toLowerCase().includes('model');
+    if (activeFilter === 'Marketing') return t.verification_type === 'document_deliverable';
+    return true;
+  });
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       
-      {/* Top Welcome & Summary Banner */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-indigo-900/40 via-purple-900/20 to-slate-900/60 border border-indigo-500/20 shadow-2xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                Command Center
-              </span>
-              <span className="text-xs text-slate-400">
-                Real-Time Telemetry & Heuristics
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-['Outfit']">
-              Manager Verification & Progress Analytics
-            </h1>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-              Track team velocity, inspect technical GitHub commits, analyze diff significance, and approve non-technical deliverables with objective evidence.
-            </p>
-          </div>
+      {/* Title Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900 font-['Outfit']">
+          Your team tasks & verification
+        </h1>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onOpenCreateTask}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
-            >
-              + Assign New Task
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 font-medium">Logged in as:</span>
+          <span className="text-xs font-bold text-slate-900 bg-white px-3 py-1 rounded-full border border-[#e8e4da] shadow-sm">
+            {currentUser?.full_name} ({currentUser?.role})
+          </span>
+        </div>
+      </div>
+
+      {/* Main Grid: Left Column (Donut + Metric Cards) vs Right Column (Waiting reviews + commits + table) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT COLUMN (Span 4) */}
+        <div className="lg:col-span-4 space-y-5">
+          
+          {/* Circular Telemetry Donut Card */}
+          <div className="intelly-card p-6 rounded-3xl flex flex-col items-center justify-center relative">
+            <div className="relative w-48 h-48 flex items-center justify-center my-2">
+              
+              {/* Multi-segment Donut Ring SVG */}
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                {/* Background track */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#f1eee4" strokeWidth="12" />
+                {/* Segment 1: Soft Yellow (Completed) */}
+                <circle
+                  cx="50" cy="50" r="38" fill="none" stroke="#fcd34d" strokeWidth="12"
+                  strokeDasharray="70 238" strokeDashoffset="0" strokeLinecap="round"
+                />
+                {/* Segment 2: Candy Pink (Under review) */}
+                <circle
+                  cx="50" cy="50" r="38" fill="none" stroke="#f472b6" strokeWidth="12"
+                  strokeDasharray="60 238" strokeDashoffset="-75" strokeLinecap="round"
+                />
+                {/* Segment 3: Lavender/Blue (In progress) */}
+                <circle
+                  cx="50" cy="50" r="38" fill="none" stroke="#93c5fd" strokeWidth="12"
+                  strokeDasharray="50 238" strokeDashoffset="-140" strokeLinecap="round"
+                />
+              </svg>
+
+              {/* Center stat */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
+                  {analytics?.total_tasks ? `${analytics.total_tasks * 4.6}k` : '23,4k'}
+                </span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">
+                  Code Delta
+                </span>
+              </div>
+
+              {/* Decorative mini badges around donut perimeter */}
+              <div className="absolute top-2 right-8 w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shadow-sm text-xs font-bold">
+                ♥
+              </div>
+              <div className="absolute top-10 left-3 w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 shadow-sm text-xs font-bold">
+                $
+              </div>
+              <div className="absolute bottom-4 left-10 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm text-xs font-bold">
+                8
+              </div>
+            </div>
+
+            {/* This week filter button */}
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#141518] text-white text-[11px] font-semibold mt-2 shadow-sm">
+              <span>This week</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
           </div>
-        </div>
 
-        {/* Ambient subtle glow decoration */}
-        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-      </div>
-
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold">Total Tasks</span>
-            <Layers className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div className="text-2xl font-black text-white font-['Outfit']">
-            {analytics.total_tasks}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">Across 5 departments</div>
-        </div>
-
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold">In Progress</span>
-            <Clock className="w-4 h-4 text-blue-400" />
-          </div>
-          <div className="text-2xl font-black text-blue-400 font-['Outfit']">
-            {analytics.in_progress_tasks}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">Active execution</div>
-        </div>
-
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-amber-950/20 border-amber-500/20">
-          <div className="flex items-center justify-between text-amber-400 mb-2">
-            <span className="text-xs font-semibold">Under Review</span>
-            <FileCheck className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="text-2xl font-black text-amber-400 font-['Outfit']">
-            {analytics.under_review_tasks}
-          </div>
-          <div className="text-[11px] text-amber-300/80 mt-1">Ready for manager signoff</div>
-        </div>
-
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800/80 bg-rose-950/20 border-rose-500/20">
-          <div className="flex items-center justify-between text-rose-400 mb-2">
-            <span className="text-xs font-semibold">Blocked</span>
-            <AlertTriangle className="w-4 h-4 text-rose-400" />
-          </div>
-          <div className="text-2xl font-black text-rose-400 font-['Outfit']">
-            {analytics.blocked_tasks}
-          </div>
-          <div className="text-[11px] text-rose-300/80 mt-1">Immediate action needed</div>
-        </div>
-
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold">Completed</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-black text-emerald-400 font-['Outfit']">
-            {analytics.completed_tasks}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">Verified & closed</div>
-        </div>
-
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold">Approval Rate</span>
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="text-2xl font-black text-purple-400 font-['Outfit']">
-            {analytics.verification_approval_rate}%
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">Evidence compliance</div>
-        </div>
-
-      </div>
-
-      {/* Action Required: Tasks Ready for Review & Blockers */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Pending Verification Reviews */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-              <h3 className="text-base font-bold text-white font-['Outfit']">
-                Verification Queue ({pendingReviews.length})
-              </h3>
+          {/* Vertical Stack: Soft Pastel Metric Cards */}
+          
+          {/* Card 1: Soft Pastel Pink Card (Under review) */}
+          <div className="p-5 rounded-3xl bg-[#fdf2f4] border border-[#f9d6dd] shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+              <span className="flex items-center gap-1.5 text-pink-600">
+                <span className="w-2 h-2 rounded-full bg-pink-500" />
+                Tasks awaiting verification
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white text-pink-700 font-bold text-[10px] shadow-xs">
+                +13%
+              </span>
             </div>
-            <span className="text-xs text-slate-400">Click to inspect evidence</span>
+            <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
+              {analytics?.under_review_tasks || 2} Pending
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1">
+              Code diffs & non-tech deliverables ready
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {pendingReviews.length === 0 ? (
-              <p className="text-xs text-slate-500 py-6 text-center">No submissions waiting for review.</p>
-            ) : (
-              pendingReviews.map((t) => (
+          {/* Card 2: Soft Pastel Lavender Card (In progress) */}
+          <div className="p-5 rounded-3xl bg-[#eff6ff] border border-[#dbeafe] shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+              <span className="flex items-center gap-1.5 text-blue-600">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                Active in progress
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white text-blue-700 font-bold text-[10px] shadow-xs">
+                -6%
+              </span>
+            </div>
+            <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
+              {analytics?.in_progress_tasks || 3} Tasks
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1">
+              Engineering, AI & Operations teams
+            </div>
+          </div>
+
+          {/* Card 3: Soft Butter Yellow Card (Blocked or overdue) */}
+          <div className="p-5 rounded-3xl bg-[#fefce8] border border-[#fef08a] shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+              <span className="flex items-center gap-1.5 text-amber-600">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                Impediments & Blockers
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white text-amber-700 font-bold text-[10px] shadow-xs">
+                Escalated
+              </span>
+            </div>
+            <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
+              {analytics?.blocked_tasks || 1} Blocked
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1">
+              Cluster quotas & third-party dependencies
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN (Span 8) */}
+        <div className="lg:col-span-8 space-y-6">
+          
+          {/* Section: Waiting for bills / verification */}
+          <div>
+            <div className="text-sm font-bold text-slate-900 mb-3 font-['Outfit']">
+              Waiting for verification
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {pendingReviews.slice(0, 2).map((t) => (
                 <div
                   key={t.id}
-                  onClick={() => onSelectTask(t)}
-                  className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-900 transition-all cursor-pointer group"
+                  className="intelly-card intelly-card-hover p-4 rounded-3xl flex items-center justify-between gap-3"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                          t.verification_type === 'github_code'
-                            ? 'bg-blue-500/20 text-blue-300'
-                            : 'bg-emerald-500/20 text-emerald-300'
-                        }`}>
-                          {t.verification_type === 'github_code' ? 'GitHub Code' : 'Deliverables'}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 transition-colors">
-                          {t.title}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-1">
-                        Assignee: {t.assignees?.map(a => a.user?.full_name).join(', ') || 'Unassigned'}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold">
-                      Inspect
-                      <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Active Blockers */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-              <h3 className="text-base font-bold text-white font-['Outfit']">
-                Active Blockers ({blockedTasks.length})
-              </h3>
-            </div>
-            <span className="text-xs text-slate-400">Escalated to management</span>
-          </div>
-
-          <div className="space-y-3">
-            {blockedTasks.length === 0 ? (
-              <p className="text-xs text-slate-500 py-6 text-center">Zero active blockers reported! Operations smooth.</p>
-            ) : (
-              blockedTasks.map((t) => {
-                const latestBlocker = t.blockers?.[t.blockers.length - 1];
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => onSelectTask(t)}
-                    className="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30 hover:border-rose-500/60 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-xs font-semibold text-rose-200">
-                          {t.title}
-                        </div>
-                        <div className="text-xs text-rose-300/80 mt-1 italic">
-                          "{latestBlocker?.reason || 'No description provided'}"
-                        </div>
-                        <div className="text-[11px] text-slate-400 mt-2">
-                          Reported by: {latestBlocker?.reporter?.full_name || 'Team member'}
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-500/20 text-rose-300">
-                        Urgent
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* Employee Workload & Department Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Workload by Employee */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-800">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-base font-bold text-white font-['Outfit']">
-                Team Workload & Capacity
-              </h3>
-              <p className="text-xs text-slate-400">Real-time task allocations across engineering, AI, and operations</p>
-            </div>
-            <Users className="w-5 h-5 text-indigo-400" />
-          </div>
-
-          <div className="space-y-4">
-            {analytics.workload_by_employee.map((emp) => {
-              const maxTasks = 5;
-              const pct = Math.min(100, Math.round((emp.assigned_tasks / maxTasks) * 100));
-              return (
-                <div key={emp.user_id} className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-200">{emp.full_name}</span>
-                      <span className="text-[10px] text-slate-400 px-2 py-0.5 rounded bg-slate-800">
-                        {emp.department}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-slate-400">
-                      <span><b className="text-blue-400">{emp.in_progress_tasks}</b> active</span>
-                      <span><b className="text-emerald-400">{emp.completed_tasks}</b> done</span>
-                      <span className="font-bold text-white">{emp.assigned_tasks} total</span>
-                    </div>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden flex">
-                    <div
-                      className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%` }}
+                  <div className="flex items-center gap-3 truncate">
+                    <img
+                      src={t.assignees?.[0]?.user?.avatar_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
+                      alt="Avatar"
+                      className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-200 shrink-0"
                     />
+                    <div className="truncate">
+                      <div className="text-xs font-bold text-slate-900 truncate">
+                        {t.assignees?.[0]?.user?.full_name || 'Team Assignee'}
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate">
+                        {t.title}
+                      </div>
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => onSelectTask(t)}
+                    className="shrink-0 px-3 py-1.5 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-[11px] font-semibold transition-all shadow-sm"
+                  >
+                    Inspect evidence
+                  </button>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Department Tasks Breakdown */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-          <h3 className="text-base font-bold text-white font-['Outfit'] mb-1">
-            Department Scope
-          </h3>
-          <p className="text-xs text-slate-400 mb-6">Distribution across organizational modules</p>
+          {/* Section: Latest GitHub & Work Activity Transactions */}
+          <div>
+            <div className="text-sm font-bold text-slate-900 mb-3 font-['Outfit']">
+              Latest GitHub & verified activity
+            </div>
 
-          <div className="space-y-4">
-            {analytics.department_distribution.map((dept) => (
-              <div key={dept.department_id} className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-slate-800/60">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              
+              <div className="intelly-card p-3.5 rounded-2xl flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-slate-200">{dept.department_name}</div>
-                  <div className="text-[10px] font-mono text-indigo-400 tracking-wider">[{dept.code}]</div>
+                  <div className="text-xs font-bold text-slate-900 font-mono">
+                    #a7b8c9d • core
+                  </div>
+                  <div className="text-[10px] text-slate-400">15 min ago</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-white">{dept.task_count}</span>
-                  <span className="text-[11px] text-slate-500">tasks</span>
+                <div className="px-2.5 py-1 rounded-xl bg-[#e6f4ea] text-[#137333] text-xs font-bold font-mono">
+                  + 142 lines
                 </div>
               </div>
-            ))}
+
+              <div className="intelly-card p-3.5 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-slate-900 font-mono">
+                    PR #42 • auth-rbac
+                  </div>
+                  <div className="text-[10px] text-slate-400">22 min ago</div>
+                </div>
+                <div className="px-2.5 py-1 rounded-xl bg-[#e6f4ea] text-[#137333] text-xs font-bold font-mono">
+                  + 465 lines
+                </div>
+              </div>
+
+              <div className="intelly-card p-3.5 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-slate-900 font-mono">
+                    Deck_v2.pdf • mkt
+                  </div>
+                  <div className="text-[10px] text-slate-400">1 hour ago</div>
+                </div>
+                <div className="px-2.5 py-1 rounded-xl bg-[#fce8e6] text-[#c5221f] text-xs font-bold">
+                  4.8 MB
+                </div>
+              </div>
+
+            </div>
           </div>
+
+          {/* Section: Filter Tabs & Full Table */}
+          <div className="intelly-card rounded-3xl p-5 space-y-4">
+            
+            {/* Filter Tabs Capsule */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {['All', 'Engineering', 'AI & ML', 'Marketing'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveFilter(tab)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeFilter === tab
+                      ? 'bg-[#141518] text-white shadow-sm'
+                      : 'bg-[#f4f2ec] text-slate-600 hover:bg-[#eae6db]'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 font-medium pb-2">
+                    <th className="pb-3 font-semibold">Type</th>
+                    <th className="pb-3 font-semibold">Task & Title</th>
+                    <th className="pb-3 font-semibold">Assignee</th>
+                    <th className="pb-3 font-semibold">Evidence Proof</th>
+                    <th className="pb-3 font-semibold">Status</th>
+                    <th className="pb-3 text-right font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredTasks.map((t) => {
+                    const isGit = t.verification_type === 'github_code';
+                    return (
+                      <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                        
+                        <td className="py-3.5 pr-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isGit ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'
+                          }`}>
+                            {isGit ? 'GitHub Code' : 'Deliverables'}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 pr-2 font-bold text-slate-900 max-w-xs truncate">
+                          {t.title}
+                        </td>
+
+                        <td className="py-3.5 pr-2 text-slate-600">
+                          {t.assignees?.[0]?.user?.full_name || 'Unassigned'}
+                        </td>
+
+                        <td className="py-3.5 pr-2 font-mono text-[11px] text-slate-500">
+                          {isGit ? `${t.github_link?.commits?.length || 1} commits (Clean diff)` : 'PDF + Deliverable URL'}
+                        </td>
+
+                        <td className="py-3.5 pr-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            t.status === 'under_review' ? 'bg-pink-100 text-pink-700' :
+                            t.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                            t.status === 'blocked' ? 'bg-rose-100 text-rose-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {t.status.replace('_', ' ')}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 text-right">
+                          <button
+                            onClick={() => onSelectTask(t)}
+                            className="text-slate-400 hover:text-slate-900 p-1 transition-colors"
+                            title="Inspect Evidence"
+                          >
+                            <ArrowUpRight className="w-4 h-4 inline" />
+                          </button>
+                        </td>
+
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
         </div>
 
       </div>

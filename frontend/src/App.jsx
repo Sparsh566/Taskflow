@@ -30,12 +30,15 @@ export default function App() {
     loginAs('sarah.chen@taskflow.dev', 'manager123');
   }, []);
 
-  const loginAs = async (email, password = 'manager123') => {
+  const loginAs = async (email, password) => {
     try {
       setLoading(true);
       let pwd = password;
-      if (email.startsWith('admin')) pwd = 'admin123';
-      else if (email.includes('.dev') || email.includes('.ai') || email.includes('.growth')) pwd = 'emp123';
+      if (!pwd) {
+        if (email.startsWith('admin')) pwd = 'admin123';
+        else if (email.startsWith('sarah') || email.startsWith('marcus')) pwd = 'manager123';
+        else pwd = 'emp123';
+      }
 
       const authData = await api.login(email, pwd);
       setAuthToken(authData.access_token);

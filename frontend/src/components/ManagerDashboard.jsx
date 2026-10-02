@@ -7,18 +7,63 @@ import {
 
 export default function ManagerDashboard({ 
   analytics, 
-  tasks, 
+  tasks = [], 
   onSelectTask, 
   currentUser 
 }) {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [timeframe, setTimeframe] = useState('This week');
+  const [showTimeframeDropdown, setShowTimeframeDropdown] = useState(false);
+  const [activeBadgeTooltip, setActiveBadgeTooltip] = useState(null);
 
-  const pendingReviews = tasks.filter(t => t.status === 'under_review');
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
-  const blockedTasks = tasks.filter(t => t.status === 'blocked');
-  const completedTasks = tasks.filter(t => t.status === 'completed');
+  const TIMEFRAME_OPTIONS = [
+    { id: 'Today', label: 'Today', desc: 'Last 24 hours' },
+    { id: 'This week', label: 'This week', desc: 'Current 7-day sprint' },
+    { id: 'This sprint', label: 'This sprint', desc: 'Active 2-week cycle' },
+    { id: 'This month', label: 'This month', desc: 'Calendar month' },
+    { id: 'All time', label: 'All time', desc: 'Complete history' },
+  ];
 
-  const filteredTasks = tasks.filter(t => {
+  // Dynamic timeframe task filtering
+  const timeframeTasks = React.useMemo(() => {
+    const now = new Date();
+    return tasks.filter((t) => {
+      if (timeframe === 'All time') return true;
+      const taskDate = new Date(t.deadline || t.created_at || now);
+      const diffDays = Math.abs(now - taskDate) / (1000 * 60 * 60 * 24);
+
+      if (timeframe === 'Today') return diffDays <= 1.5;
+      if (timeframe === 'This week') return diffDays <= 7.5;
+      if (timeframe === 'This sprint') return diffDays <= 14.5;
+      if (timeframe === 'This month') return diffDays <= 31;
+      return true;
+    });
+  }, [tasks, timeframe]);
+
+  // Use timeframeTasks if any exist; otherwise fallback to tasks gracefully
+  const activeDataset = timeframeTasks.length > 0 ? timeframeTasks : tasks;
+  const totalTasksCount = activeDataset.length;
+
+  const pendingReviews = activeDataset.filter(t => t.status === 'under_review');
+  const inProgressTasks = activeDataset.filter(t => t.status === 'in_progress');
+  const blockedTasks = activeDataset.filter(t => t.status === 'blocked');
+  const completedTasks = activeDataset.filter(t => t.status === 'completed');
+
+  // Compute donut segment lengths (Circumference = 2 * pi * 38 = 238.76)
+  const CIRCUMFERENCE = 238.76;
+  const compRatio = totalTasksCount > 0 ? (completedTasks.length / totalTasksCount) : 0.35;
+  const reviewRatio = totalTasksCount > 0 ? (pendingReviews.length / totalTasksCount) : 0.35;
+  const inProgRatio = totalTasksCount > 0 ? (inProgressTasks.length / totalTasksCount) : 0.30;
+
+  const compDash = `${compRatio * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+  const reviewDash = `${reviewRatio * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+  const inProgDash = `${inProgRatio * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+
+  const compOffset = 0;
+  const reviewOffset = -(compRatio * CIRCUMFERENCE);
+  const inProgOffset = -((compRatio + reviewRatio) * CIRCUMFERENCE);
+
+  const filteredTasks = activeDataset.filter(t => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Engineering') return t.category?.department_id || t.verification_type === 'github_code';
     if (activeFilter === 'AI & ML') return t.title.toLowerCase().includes('llama') || t.title.toLowerCase().includes('model');
@@ -51,56 +96,127 @@ export default function ManagerDashboard({
           
           {/* Circular Telemetry Donut Card */}
           <div className="intelly-card p-6 rounded-3xl flex flex-col items-center justify-center relative">
+            
+            {/* Tooltip banner on badge hover */}
+            {activeBadgeTooltip && (
+              <div className="absolute top-3 px-3 py-1 rounded-full bg-[#141518] text-white text-[10px] font-bold animate-in fade-in z-20">
+                {activeBadgeTooltip}
+              </div>
+            )}
+
             <div className="relative w-48 h-48 flex items-center justify-center my-2">
               
               {/* Multi-segment Donut Ring SVG */}
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <svg className="w-full h-full -rotate-90 transition-all duration-500" viewBox="0 0 100 100">
                 {/* Background track */}
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#f1eee4" strokeWidth="12" />
+                
                 {/* Segment 1: Soft Yellow (Completed) */}
                 <circle
                   cx="50" cy="50" r="38" fill="none" stroke="#fcd34d" strokeWidth="12"
-                  strokeDasharray="70 238" strokeDashoffset="0" strokeLinecap="round"
+                  strokeDasharray={compDash} strokeDashoffset={compOffset} strokeLinecap="round"
+                  className="transition-all duration-500"
                 />
+                
                 {/* Segment 2: Candy Pink (Under review) */}
                 <circle
                   cx="50" cy="50" r="38" fill="none" stroke="#f472b6" strokeWidth="12"
-                  strokeDasharray="60 238" strokeDashoffset="-75" strokeLinecap="round"
+                  strokeDasharray={reviewDash} strokeDashoffset={reviewOffset} strokeLinecap="round"
+                  className="transition-all duration-500"
                 />
+                
                 {/* Segment 3: Lavender/Blue (In progress) */}
                 <circle
                   cx="50" cy="50" r="38" fill="none" stroke="#93c5fd" strokeWidth="12"
-                  strokeDasharray="50 238" strokeDashoffset="-140" strokeLinecap="round"
+                  strokeDasharray={inProgDash} strokeDashoffset={inProgOffset} strokeLinecap="round"
+                  className="transition-all duration-500"
                 />
               </svg>
 
               {/* Center stat */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
-                  {analytics?.total_tasks || tasks.length}
+                  {totalTasksCount}
                 </span>
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">
-                  {currentUser?.role === 'employee' ? 'My Tasks' : 'Total Tasks'}
+                  {currentUser?.role === 'employee' ? `${timeframe} Tasks` : `${timeframe} Total`}
                 </span>
               </div>
 
-              {/* Decorative mini badges around donut perimeter */}
-              <div className="absolute top-2 right-8 w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shadow-sm text-xs font-bold">
+              {/* Interactive mini badges around donut perimeter */}
+              <button
+                onMouseEnter={() => setActiveBadgeTooltip(`Under Review: ${pendingReviews.length} tasks (${Math.round(reviewRatio * 100)}%)`)}
+                onMouseLeave={() => setActiveBadgeTooltip(null)}
+                className="absolute top-2 right-8 w-6 h-6 rounded-full bg-pink-100 hover:scale-110 flex items-center justify-center text-pink-600 shadow-sm text-xs font-bold transition-transform cursor-pointer"
+                title="Under Review"
+              >
                 ♥
-              </div>
-              <div className="absolute top-10 left-3 w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 shadow-sm text-xs font-bold">
+              </button>
+              
+              <button
+                onMouseEnter={() => setActiveBadgeTooltip(`Completed: ${completedTasks.length} tasks (${Math.round(compRatio * 100)}%)`)}
+                onMouseLeave={() => setActiveBadgeTooltip(null)}
+                className="absolute top-10 left-3 w-6 h-6 rounded-full bg-yellow-100 hover:scale-110 flex items-center justify-center text-yellow-700 shadow-sm text-xs font-bold transition-transform cursor-pointer"
+                title="Completed"
+              >
                 $
-              </div>
-              <div className="absolute bottom-4 left-10 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm text-xs font-bold">
+              </button>
+              
+              <button
+                onMouseEnter={() => setActiveBadgeTooltip(`In Progress: ${inProgressTasks.length} tasks (${Math.round(inProgRatio * 100)}%)`)}
+                onMouseLeave={() => setActiveBadgeTooltip(null)}
+                className="absolute bottom-4 left-10 w-6 h-6 rounded-full bg-blue-100 hover:scale-110 flex items-center justify-center text-blue-600 shadow-sm text-xs font-bold transition-transform cursor-pointer"
+                title="In Progress"
+              >
                 8
-              </div>
+              </button>
             </div>
 
-            {/* This week filter button */}
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#141518] text-white text-[11px] font-semibold mt-2 shadow-sm">
-              <span>This week</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+            {/* Timeframe Dropdown Selector */}
+            <div className="relative mt-2">
+              <button
+                onClick={() => setShowTimeframeDropdown(!showTimeframeDropdown)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-[11px] font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <span>{timeframe}</span>
+                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${showTimeframeDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Timeframe Floating Popover Menu */}
+              {showTimeframeDropdown && (
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-48 rounded-2xl bg-white border border-[#e8e4da] shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                    Select Timeframe
+                  </div>
+                  {TIMEFRAME_OPTIONS.map((opt) => {
+                    const isSelected = timeframe === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setTimeframe(opt.id);
+                          setShowTimeframeDropdown(false);
+                        }}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                          isSelected
+                            ? 'bg-[#141518] text-white font-bold'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div>
+                          <div>{opt.label}</div>
+                          <div className={`text-[9px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
+                            {opt.desc}
+                          </div>
+                        </div>
+                        {isSelected && <span className="text-pink-400 text-xs">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Vertical Stack: Soft Pastel Metric Cards */}
@@ -117,10 +233,10 @@ export default function ManagerDashboard({
               </span>
             </div>
             <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
-              {analytics?.under_review_tasks !== undefined ? analytics.under_review_tasks : pendingReviews.length} Pending
+              {pendingReviews.length} Pending
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              {currentUser?.role === 'employee' ? 'Awaiting manager approval' : 'Code diffs & non-tech deliverables ready'}
+              {currentUser?.role === 'employee' ? 'Awaiting manager approval' : 'Code diffs & deliverables ready'}
             </div>
           </div>
 
@@ -132,11 +248,11 @@ export default function ManagerDashboard({
                 Active in progress
               </span>
               <span className="px-2 py-0.5 rounded-full bg-white text-blue-700 font-bold text-[10px] shadow-xs">
-                Sprint
+                {timeframe}
               </span>
             </div>
             <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
-              {analytics?.in_progress_tasks !== undefined ? analytics.in_progress_tasks : inProgressTasks.length} Tasks
+              {inProgressTasks.length} Tasks
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
               {currentUser?.role === 'employee' ? 'Currently working on' : 'Engineering, AI & Operations teams'}
@@ -155,7 +271,7 @@ export default function ManagerDashboard({
               </span>
             </div>
             <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
-              {analytics?.blocked_tasks !== undefined ? analytics.blocked_tasks : blockedTasks.length} Blocked
+              {blockedTasks.length} Blocked
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
               Cluster quotas & dependencies

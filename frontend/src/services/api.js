@@ -1,4 +1,4 @@
-const rawBase = import.meta.env.VITE_API_URL;
+const rawBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://taskflow-hz2k.onrender.com' : '');
 const API_BASE = rawBase ? `${rawBase.replace(/\/+$/, '')}/api/v1` : '/api/v1';
 
 let authToken = localStorage.getItem('taskflow_token') || '';

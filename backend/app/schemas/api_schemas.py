@@ -49,7 +49,8 @@ class UserBase(BaseModel):
     is_active: bool = True
 
 class UserCreate(UserBase):
-    password: str
+    password: Optional[str] = "emp123"
+    workspace_id: Optional[str] = None
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -98,6 +99,7 @@ class TaskBase(BaseModel):
     acceptance_criteria: List[AcceptanceCriterion] = Field(default_factory=list)
     deadline: datetime
     category_id: Optional[str] = None
+    workspace_id: Optional[str] = None
 
 class TaskCreate(TaskBase):
     assignee_ids: List[str] = Field(default_factory=list)

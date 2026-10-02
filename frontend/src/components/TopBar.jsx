@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Plus, Settings, User, MessageSquare } from 'lucide-react';
+import { Search, Bell, Plus, Settings, User, MessageSquare, UserPlus } from 'lucide-react';
 
 export default function TopBar({ 
   onOpenCreateTask, 
@@ -7,7 +7,9 @@ export default function TopBar({
   onMarkNotificationRead, 
   currentUser,
   onNavigate,
-  unreadChatCount = 0
+  unreadChatCount = 0,
+  activeWorkspace = null,
+  onOpenAddUser = () => {}
 }) {
   const [showNotif, setShowNotif] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -47,14 +49,34 @@ export default function TopBar({
         </div>
       </div>
 
-      {/* Right Controls: Add Task Button + Dark Action Capsule */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* Right Controls: Active Workspace Badge + Add Member + Add Task Button + Dark Action Capsule */}
+      <div className="flex items-center gap-2.5 shrink-0">
         
+        {/* Active Project Workspace Pill */}
+        {activeWorkspace && (
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#e8e4da] shadow-2xs text-xs font-semibold text-slate-700">
+            <span>{activeWorkspace.icon || '🚀'}</span>
+            <span className="truncate max-w-[120px]">{activeWorkspace.name}</span>
+          </div>
+        )}
+
+        {/* Add Real Member Button */}
+        {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
+          <button
+            onClick={onOpenAddUser}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-slate-50 border border-[#e8e4da] text-slate-800 text-xs font-semibold shadow-2xs transition-all active:scale-95"
+            title="Add real team member to workspace"
+          >
+            <UserPlus className="w-3.5 h-3.5 text-pink-600" />
+            <span className="hidden sm:inline">Add Member</span>
+          </button>
+        )}
+
         {/* Black Add Task Pill Button */}
         {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
           <button
             onClick={onOpenCreateTask}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Task</span>

@@ -33,11 +33,15 @@ def list_tasks(
     priority: Optional[TaskPriority] = None,
     department_id: Optional[str] = None,
     assignee_id: Optional[str] = None,
+    workspace_id: Optional[str] = None,
     only_my_tasks: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Task)
+
+    if workspace_id:
+        query = query.filter(Task.workspace_id == workspace_id)
 
     if only_my_tasks or (current_user.role == UserRole.EMPLOYEE and not assignee_id):
         query = query.join(TaskAssignee).filter(TaskAssignee.user_id == current_user.id)

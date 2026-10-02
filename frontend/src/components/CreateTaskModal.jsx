@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Calendar, GitBranch, FileText, CheckSquare } from 'lucide-react';
 import { api } from '../services/api';
 
-export default function CreateTaskModal({ onClose, onCreated, currentUser }) {
+export default function CreateTaskModal({ onClose, onCreated, currentUser, activeWorkspace = null }) {
   const [departments, setDepartments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
@@ -17,7 +17,9 @@ export default function CreateTaskModal({ onClose, onCreated, currentUser }) {
   const [deadline, setDeadline] = useState(
     new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
-  const [githubRepo, setGithubRepo] = useState('taskflow-org/core-platform');
+  const [githubRepo, setGithubRepo] = useState(
+    activeWorkspace?.repository_url || 'taskflow-org/core-platform'
+  );
   const [branchName, setBranchName] = useState('');
   const [criteria, setCriteria] = useState([
     { id: '1', text: 'Unit tests cover all core edge cases', completed: false },
@@ -37,7 +39,8 @@ export default function CreateTaskModal({ onClose, onCreated, currentUser }) {
         api.getUsers()
       ]);
       setDepartments(deptRes);
-      setUsers(usersRes.filter(u => u.role === 'employee'));
+      // Allow assigning to all team members (employees, managers, custom users)
+      setUsers(usersRes);
 
       if (deptRes.length > 0) {
         setDepartmentId(deptRes[0].id);
@@ -90,7 +93,8 @@ export default function CreateTaskModal({ onClose, onCreated, currentUser }) {
         deadline: new Date(deadline).toISOString(),
         assignee_ids: assigneeId ? [assigneeId] : [],
         github_repo: verificationType === 'github_code' ? githubRepo : null,
-        branch_name: verificationType === 'github_code' ? (branchName || `task/${Date.now().toString().slice(-6)}`) : null
+        branch_name: verificationType === 'github_code' ? (branchName || `task/${Date.now().toString().slice(-6)}`) : null,
+        workspace_id: activeWorkspace?.id || null
       });
 
       onCreated();
@@ -108,9 +112,17 @@ export default function CreateTaskModal({ onClose, onCreated, currentUser }) {
         
         <div className="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 font-['Outfit']">
-              Create New Employee Task
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-black text-slate-900 font-['Outfit']">
+                Create New Task
+              </h2>
+              {activeWorkspace && (
+                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-pink-100 text-pink-700">
+                  <span>{activeWorkspace.icon || '🚀'}</span>
+                  <span>{activeWorkspace.name}</span>
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Assign technical or non-technical work with verification criteria.
             </p>

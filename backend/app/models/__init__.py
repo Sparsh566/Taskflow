@@ -6,7 +6,8 @@ from app.models.entities import (
     Department, User, TaskCategory, Task, TaskAssignee,
     TaskBlocker, GitHubIntegration, GitHubTaskLink, GitHubCommit,
     GitHubPullRequest, CommitAnalysis, TaskEvidence, EvidenceDocument,
-    VerificationReview, Notification, ActivityLog, ChatMessage
+    VerificationReview, Notification, ActivityLog, ChatMessage,
+    Workspace, WorkspaceMember
 )
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "Department", "User", "TaskCategory", "Task", "TaskAssignee",
     "TaskBlocker", "GitHubIntegration", "GitHubTaskLink", "GitHubCommit",
     "GitHubPullRequest", "CommitAnalysis", "TaskEvidence", "EvidenceDocument",
-    "VerificationReview", "Notification", "ActivityLog", "ChatMessage"
+    "VerificationReview", "Notification", "ActivityLog", "ChatMessage",
+    "Workspace", "WorkspaceMember"
 ]

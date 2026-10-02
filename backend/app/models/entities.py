@@ -79,11 +79,13 @@ class Task(Base):
     started_at = Column(DateTime(timezone=True), nullable=True)
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
+    workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 
     creator = relationship("User", foreign_keys=[creator_id], back_populates="created_tasks")
     category = relationship("TaskCategory", back_populates="tasks")
+    workspace = relationship("Workspace", back_populates="tasks")
     assignees = relationship("TaskAssignee", back_populates="task", cascade="all, delete-orphan")
     blockers = relationship("TaskBlocker", back_populates="task", cascade="all, delete-orphan")
     github_link = relationship("GitHubTaskLink", uselist=False, back_populates="task", cascade="all, delete-orphan")
@@ -282,4 +284,33 @@ class ChatMessage(Base):
 
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(100), nullable=False)
+    slug = Column(String(100), unique=True, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    icon = Column(String(20), default="🚀", nullable=False)
+    repository_url = Column(String(255), nullable=True)
+    owner_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+    owner = relationship("User", foreign_keys=[owner_id])
+    members = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="workspace")
+
+class WorkspaceMember(Base):
+    __tablename__ = "workspace_members"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(50), default="member", nullable=False)
+    joined_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    workspace = relationship("Workspace", back_populates="members")
+    user = relationship("User")
 

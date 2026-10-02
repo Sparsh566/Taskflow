@@ -10,6 +10,15 @@ from app.seed import init_seed_data
 async def lifespan(app: FastAPI):
     # Create tables
     Base.metadata.create_all(bind=engine)
+    # Safe migration for new columns if upgrading existing SQLite/Postgres DB
+    with engine.connect() as conn:
+        try:
+            from sqlalchemy import text
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN workspace_id VARCHAR(36)"))
+            conn.commit()
+        except Exception:
+            pass
+
     # Seed default departments, users, and tasks
     db = SessionLocal()
     try:

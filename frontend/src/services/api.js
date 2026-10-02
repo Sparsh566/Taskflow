@@ -56,8 +56,31 @@ export const api = {
 
   // Users & Departments
   getUsers: (params = '') => request(`/users${params ? `?${params}` : ''}`),
+  createUser: (data) =>
+    request('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   getDepartments: () => request('/departments'),
   getCategories: (departmentId) => request(`/departments/${departmentId}/categories`),
+
+  // Workspaces / Projects
+  getWorkspaces: () => request('/workspaces'),
+  createWorkspace: (data) =>
+    request('/workspaces', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getWorkspace: (id) => request(`/workspaces/${id}`),
+  addWorkspaceMember: (wsId, data) =>
+    request(`/workspaces/${wsId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  deleteWorkspace: (id) =>
+    request(`/workspaces/${id}`, {
+      method: 'DELETE',
+    }),
 
   // Tasks
   getTasks: (params = '') => request(`/tasks${params ? `?${params}` : ''}`),

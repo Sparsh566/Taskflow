@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, Calendar, Users, BarChart3, ShieldCheck, 
   GitBranch, FolderGit2, Settings, LogOut, ChevronDown, CheckCircle2,
-  MessageSquare 
+  MessageSquare, Plus, Check, Briefcase
 } from 'lucide-react';
 
 const PRESET_USERS = [
@@ -19,22 +19,108 @@ export default function Sidebar({
   setActiveTab, 
   currentUser, 
   onSwitchUser,
-  unreadChatCount = 0
+  unreadChatCount = 0,
+  workspaces = [],
+  activeWorkspace = null,
+  onSelectWorkspace = () => {},
+  onOpenCreateWorkspace = () => {}
 }) {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
 
   return (
     <aside className="w-64 h-[calc(100vh-24px)] m-3 sticky top-3 rounded-3xl bg-[#141518] text-slate-300 flex flex-col justify-between p-5 select-none shadow-2xl shrink-0 z-30">
       
       {/* Brand Header */}
       <div>
-        <div className="flex items-center gap-2 px-2 py-3 mb-6">
+        <div className="flex items-center justify-between px-2 py-2 mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl font-black text-white tracking-tight font-['Outfit'] lowercase">
               taskflow
             </span>
             <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse" />
           </div>
+        </div>
+
+        {/* Workspace Switcher Selector */}
+        <div className="relative mb-6">
+          <button
+            onClick={() => {
+              setShowWorkspaceDropdown(!showWorkspaceDropdown);
+              setShowUserDropdown(false);
+            }}
+            className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-[#1d1f24] hover:bg-[#25272e] border border-slate-800 transition-all text-left group"
+          >
+            <div className="flex items-center gap-2.5 truncate">
+              <div className="w-7 h-7 rounded-xl bg-slate-800 flex items-center justify-center text-sm shadow-inner group-hover:scale-105 transition-transform shrink-0">
+                {activeWorkspace?.icon || '🚀'}
+              </div>
+              <div className="truncate">
+                <div className="text-xs font-bold text-white truncate leading-tight">
+                  {activeWorkspace?.name || 'TaskFlow Core'}
+                </div>
+                <div className="text-[10px] text-slate-400 font-medium truncate">
+                  {activeWorkspace?.repository_url ? 'Connected to GitHub' : 'Project Workspace'}
+                </div>
+              </div>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+          </button>
+
+          {/* Workspace Dropdown Popover */}
+          {showWorkspaceDropdown && (
+            <div className="absolute top-full mt-2 left-0 w-64 rounded-2xl bg-[#1a1b20] border border-slate-700 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-1.5 border-b border-slate-800 mb-1 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Projects ({workspaces.length})
+                </span>
+              </div>
+
+              <div className="max-h-48 overflow-y-auto space-y-1 py-1">
+                {workspaces.map((ws) => {
+                  const isSelected = activeWorkspace?.id === ws.id;
+                  return (
+                    <button
+                      key={ws.id}
+                      onClick={() => {
+                        onSelectWorkspace(ws);
+                        setShowWorkspaceDropdown(false);
+                      }}
+                      className={`w-full text-left p-2 rounded-xl text-xs transition-all flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-pink-600/20 text-white border border-pink-500/30'
+                          : 'text-slate-300 hover:bg-[#24262c]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="text-base">{ws.icon || '🚀'}</span>
+                        <div className="truncate">
+                          <div className="font-semibold truncate">{ws.name}</div>
+                          {ws.member_count > 0 && (
+                            <div className="text-[9px] text-slate-400">{ws.member_count} member{ws.member_count > 1 ? 's' : ''}</div>
+                          )}
+                        </div>
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-pink-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-1.5 mt-1 border-t border-slate-800">
+                <button
+                  onClick={() => {
+                    setShowWorkspaceDropdown(false);
+                    onOpenCreateWorkspace();
+                  }}
+                  className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-pink-400 hover:bg-pink-500/10 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Create Workspace</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Section: General */}

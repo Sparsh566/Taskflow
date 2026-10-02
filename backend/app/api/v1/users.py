@@ -24,20 +24,41 @@ def list_users(
         query = query.filter(User.role == role)
     return query.all()
 
+from app.models.entities import User, WorkspaceMember
+
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_manager_or_admin)
 ):
-    existing = db.query(User).filter(User.email == user_in.email).first()
+    existing = db.query(User).filter(User.email == user_in.email.strip().lower()).first()
     if existing:
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
-    hashed_pw = get_password_hash(user_in.password)
-    user_dict = user_in.model_dump(exclude={"password"})
+    pwd = user_in.password or "emp123"
+    hashed_pw = get_password_hash(pwd)
+    
+    avatar = user_in.avatar_url
+    if not avatar:
+        avatar = f"https://api.dicebear.com/7.x/avataaars/svg?seed={user_in.email}"
+
+    user_dict = user_in.model_dump(exclude={"password", "workspace_id"})
+    user_dict["email"] = user_in.email.strip().lower()
+    user_dict["avatar_url"] = avatar
+
     user = User(**user_dict, hashed_password=hashed_pw)
     db.add(user)
+    db.flush()
+
+    # If workspace_id was passed, automatically add to that workspace
+    if user_in.workspace_id:
+        db.add(WorkspaceMember(
+            workspace_id=user_in.workspace_id,
+            user_id=user.id,
+            role="member"
+        ))
+
     db.commit()
     db.refresh(user)
     return user

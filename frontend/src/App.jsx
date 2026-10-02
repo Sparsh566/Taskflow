@@ -11,6 +11,8 @@ import VerificationModal from './components/VerificationModal';
 import CreateTaskModal from './components/CreateTaskModal';
 import SubmitEvidenceModal from './components/SubmitEvidenceModal';
 import BlockerModal from './components/BlockerModal';
+import CreateWorkspaceModal from './components/CreateWorkspaceModal';
+import AddUserModal from './components/AddUserModal';
 import { api, setAuthToken } from './services/api';
 
 export default function App() {
@@ -22,6 +24,12 @@ export default function App() {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [chatTargetUser, setChatTargetUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Workspace management state
+  const [workspaces, setWorkspaces] = useState([]);
+  const [activeWorkspace, setActiveWorkspace] = useState(null);
+  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   // Modals state
   const [selectedTask, setSelectedTask] = useState(null);
@@ -51,6 +59,26 @@ export default function App() {
     }
   };
 
+  const loadWorkspaces = async () => {
+    try {
+      const wsList = await api.getWorkspaces();
+      setWorkspaces(wsList);
+      if (wsList.length > 0) {
+        setActiveWorkspace(prev => {
+          if (prev && wsList.some(w => w.id === prev.id)) {
+            return wsList.find(w => w.id === prev.id);
+          }
+          return wsList[0];
+        });
+        return wsList[0];
+      }
+      return null;
+    } catch (err) {
+      console.error('Failed to load workspaces:', err);
+      return null;
+    }
+  };
+
   const loginAs = async (email, password = null) => {
     try {
       setLoading(true);
@@ -71,7 +99,9 @@ export default function App() {
 
       setAuthToken(authData.access_token);
       setCurrentUser(authData.user);
-      await loadAppTelemetry();
+      
+      const defaultWs = await loadWorkspaces();
+      await loadAppTelemetry(defaultWs?.id);
       loadUnreadChatCount();
     } catch (err) {
       console.error('Login error:', err);
@@ -80,10 +110,12 @@ export default function App() {
     }
   };
 
-  const loadAppTelemetry = async () => {
+  const loadAppTelemetry = async (targetWsId = undefined) => {
     try {
+      const wsId = targetWsId !== undefined ? targetWsId : activeWorkspace?.id;
+      const queryParam = wsId ? `workspace_id=${wsId}` : '';
       const [tasksRes, notifsRes] = await Promise.all([
-        api.getTasks(),
+        api.getTasks(queryParam),
         api.getNotifications()
       ]);
       setTasks(tasksRes);
@@ -98,6 +130,11 @@ export default function App() {
     } catch (err) {
       console.error('Error loading app telemetry:', err);
     }
+  };
+
+  const handleSelectWorkspace = (ws) => {
+    setActiveWorkspace(ws);
+    loadAppTelemetry(ws?.id);
   };
 
   const handleStartTask = async (taskId) => {
@@ -141,6 +178,10 @@ export default function App() {
         currentUser={currentUser}
         onSwitchUser={(email) => loginAs(email)}
         unreadChatCount={unreadChatCount}
+        workspaces={workspaces}
+        activeWorkspace={activeWorkspace}
+        onSelectWorkspace={handleSelectWorkspace}
+        onOpenCreateWorkspace={() => setShowCreateWorkspaceModal(true)}
       />
 
       {/* Main Content Area */}
@@ -154,6 +195,8 @@ export default function App() {
           currentUser={currentUser}
           onNavigate={(tab) => setActiveTab(tab)}
           unreadChatCount={unreadChatCount}
+          activeWorkspace={activeWorkspace}
+          onOpenAddUser={() => setShowAddUserModal(true)}
         />
 
         {/* Dynamic View Container */}
@@ -198,6 +241,9 @@ export default function App() {
 
           {activeTab === 'team' && (
             <TeamDirectory
+              currentUser={currentUser}
+              activeWorkspace={activeWorkspace}
+              onOpenAddUser={() => setShowAddUserModal(true)}
               onOpenChatWithUser={(user) => {
                 setChatTargetUser(user);
                 setActiveTab('messages');
@@ -239,7 +285,7 @@ export default function App() {
                 GitHub Repositories & Pull Request Links
               </h1>
               <p className="text-xs text-slate-500">
-                Connected repositories: <code>taskflow-org/core-platform</code>
+                Connected repositories: <code>{activeWorkspace?.repository_url || 'taskflow-org/core-platform'}</code>
               </p>
               <TaskBoard
                 tasks={tasks.filter(t => t.verification_type === 'github_code')}
@@ -293,6 +339,33 @@ export default function App() {
           onClose={() => setShowCreateModal(false)}
           onCreated={loadAppTelemetry}
           currentUser={currentUser}
+          activeWorkspace={activeWorkspace}
+        />
+      )}
+
+      {/* Create Custom Workspace Modal */}
+      {showCreateWorkspaceModal && (
+        <CreateWorkspaceModal
+          onClose={() => setShowCreateWorkspaceModal(false)}
+          onCreated={async (newWs) => {
+            const updatedList = await api.getWorkspaces();
+            setWorkspaces(updatedList);
+            setActiveWorkspace(newWs);
+            await loadAppTelemetry(newWs.id);
+          }}
+        />
+      )}
+
+      {/* Add Custom User / Team Member Modal */}
+      {showAddUserModal && (
+        <AddUserModal
+          activeWorkspace={activeWorkspace}
+          onClose={() => setShowAddUserModal(false)}
+          onCreated={async () => {
+            await loadAppTelemetry();
+            const updatedList = await api.getWorkspaces();
+            setWorkspaces(updatedList);
+          }}
         />
       )}
 

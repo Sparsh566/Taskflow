@@ -150,7 +150,7 @@ def init_seed_data(db: Session):
     repo_eng = GitHubIntegration(
         repo_name="taskflow-org/core-platform",
         repo_url="https://github.com/taskflow-org/core-platform",
-        webhook_secret="whsec_sample_secret_abc123"
+        webhook_secret=None
     )
     db.add(repo_eng)
     db.flush()

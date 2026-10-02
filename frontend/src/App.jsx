@@ -27,20 +27,16 @@ export default function App() {
 
   // Initialize with Sarah Chen (Manager) by default
   useEffect(() => {
-    loginAs('sarah.chen@taskflow.dev', 'manager123');
+    loginAs('sarah.chen@taskflow.dev');
   }, []);
 
-  const loginAs = async (email, password) => {
+  const loginAs = async (email, password = null) => {
     try {
       setLoading(true);
-      let pwd = password;
-      if (!pwd) {
-        if (email.startsWith('admin')) pwd = 'admin123';
-        else if (email.startsWith('sarah') || email.startsWith('marcus')) pwd = 'manager123';
-        else pwd = 'emp123';
-      }
+      const authData = password
+        ? await api.login(email, password)
+        : await api.switchPersona(email);
 
-      const authData = await api.login(email, pwd);
       setAuthToken(authData.access_token);
       setCurrentUser(authData.user);
       await loadAppTelemetry();

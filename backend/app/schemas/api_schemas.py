@@ -20,6 +20,10 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class PersonaSwitchRequest(BaseModel):
+    email: EmailStr
+
+
 class DepartmentBase(BaseModel):
     name: str
     code: str

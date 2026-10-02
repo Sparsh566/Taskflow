@@ -46,6 +46,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
+  switchPersona: (email) =>
+    request('/auth/switch-persona', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
   getMe: () => request('/auth/me'),
 
   // Users & Departments

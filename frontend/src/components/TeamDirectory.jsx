@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, GitBranch, Shield, ArrowUpRight } from 'lucide-react';
+import { Users, Mail, GitBranch, Shield, ArrowUpRight, MessageSquare, LogIn } from 'lucide-react';
 import { api } from '../services/api';
 
-export default function TeamDirectory() {
+export default function TeamDirectory({ onOpenChatWithUser, onSwitchUser }) {
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedDept, setSelectedDept] = useState('all');
@@ -132,11 +132,25 @@ export default function TeamDirectory() {
               </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span className="flex items-center gap-1.5 text-emerald-700 font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" /> Active Member
-              </span>
-              <span className="font-medium text-slate-400">Team 2026</span>
+            {/* Quick Action Buttons: Direct Chat & Login Persona */}
+            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button
+                onClick={() => onOpenChatWithUser?.(user)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-semibold transition-colors"
+                title="Send Direct Message"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Message</span>
+              </button>
+
+              <button
+                onClick={() => onSwitchUser?.(user.email)}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#141518] hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                title="Open this user persona"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Open ID</span>
+              </button>
             </div>
           </div>
         ))}

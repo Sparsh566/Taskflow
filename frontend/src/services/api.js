@@ -110,4 +110,16 @@ export const api = {
   markAllNotificationsRead: () =>
     request('/notifications/mark-all-read', { method: 'PATCH' }),
   getDashboardAnalytics: () => request('/analytics/dashboard'),
+
+  // Direct Chat & Messaging
+  getChatConversations: () => request('/chat/conversations'),
+  getChatMessages: (userId) => request(`/chat/messages/${userId}`),
+  sendMessage: (data) =>
+    request('/chat/messages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  markChatMessageRead: (id) =>
+    request(`/chat/messages/${id}/read`, { method: 'POST' }),
+  getChatUnreadCount: () => request('/chat/unread-count'),
 };

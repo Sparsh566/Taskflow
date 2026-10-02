@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Bell, Plus, Settings, User } from 'lucide-react';
+import { Search, Bell, Plus, Settings, User, MessageSquare } from 'lucide-react';
 
 export default function TopBar({ 
   onOpenCreateTask, 
   notifications, 
   onMarkNotificationRead, 
-  currentUser 
+  currentUser,
+  onNavigate,
+  unreadChatCount = 0
 }) {
   const [showNotif, setShowNotif] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -62,17 +64,36 @@ export default function TopBar({
         {/* Action Capsule from reference UI */}
         <div className="relative flex items-center gap-3 bg-[#141518] px-3.5 py-1.5 rounded-full shadow-md">
           {/* User Icon */}
-          <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-slate-700">
+          <button
+            onClick={() => onNavigate?.('settings')}
+            title="Profile & Settings"
+            className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-slate-700 hover:ring-pink-500 transition-colors"
+          >
             <img
               src={currentUser?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
               alt={currentUser?.full_name}
               className="w-full h-full object-cover"
             />
-          </div>
+          </button>
+
+          {/* Messages Quick Icon */}
+          <button
+            onClick={() => onNavigate?.('messages')}
+            title="Direct Messages"
+            className="relative text-slate-300 hover:text-white transition-colors"
+          >
+            <MessageSquare className="w-4 h-4" />
+            {unreadChatCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-pink-500 text-white text-[9px] font-bold flex items-center justify-center">
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
 
           {/* Bell Icon */}
           <button
             onClick={() => setShowNotif(!showNotif)}
+            title="Notifications"
             className="relative text-slate-300 hover:text-white transition-colors"
           >
             <Bell className="w-4 h-4" />
@@ -85,7 +106,8 @@ export default function TopBar({
 
           {/* Settings Icon */}
           <button
-            onClick={() => alert("TaskFlow Settings")}
+            onClick={() => onNavigate?.('settings')}
+            title="Settings"
             className="text-slate-300 hover:text-white transition-colors"
           >
             <Settings className="w-4 h-4" />

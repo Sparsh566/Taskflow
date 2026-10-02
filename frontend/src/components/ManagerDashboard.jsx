@@ -32,7 +32,7 @@ export default function ManagerDashboard({
       {/* Title Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-black tracking-tight text-slate-900 font-['Outfit']">
-          Your team tasks & verification
+          {currentUser?.role === 'employee' ? 'My Tasks & Performance Dashboard' : 'Your team tasks & verification'}
         </h1>
 
         <div className="flex items-center gap-2">
@@ -77,10 +77,10 @@ export default function ManagerDashboard({
               {/* Center stat */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
-                  {analytics?.total_tasks ? `${analytics.total_tasks * 4.6}k` : '23,4k'}
+                  {analytics?.total_tasks || tasks.length}
                 </span>
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">
-                  Code Delta
+                  {currentUser?.role === 'employee' ? 'My Tasks' : 'Total Tasks'}
                 </span>
               </div>
 
@@ -110,17 +110,17 @@ export default function ManagerDashboard({
             <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
               <span className="flex items-center gap-1.5 text-pink-600">
                 <span className="w-2 h-2 rounded-full bg-pink-500" />
-                Tasks awaiting verification
+                {currentUser?.role === 'employee' ? 'My submissions in review' : 'Tasks awaiting verification'}
               </span>
               <span className="px-2 py-0.5 rounded-full bg-white text-pink-700 font-bold text-[10px] shadow-xs">
-                +13%
+                {pendingReviews.length > 0 ? 'Active' : 'Clear'}
               </span>
             </div>
             <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
-              {analytics?.under_review_tasks || 2} Pending
+              {analytics?.under_review_tasks !== undefined ? analytics.under_review_tasks : pendingReviews.length} Pending
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              Code diffs & non-tech deliverables ready
+              {currentUser?.role === 'employee' ? 'Awaiting manager approval' : 'Code diffs & non-tech deliverables ready'}
             </div>
           </div>
 
@@ -132,14 +132,14 @@ export default function ManagerDashboard({
                 Active in progress
               </span>
               <span className="px-2 py-0.5 rounded-full bg-white text-blue-700 font-bold text-[10px] shadow-xs">
-                -6%
+                Sprint
               </span>
             </div>
             <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
-              {analytics?.in_progress_tasks || 3} Tasks
+              {analytics?.in_progress_tasks !== undefined ? analytics.in_progress_tasks : inProgressTasks.length} Tasks
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              Engineering, AI & Operations teams
+              {currentUser?.role === 'employee' ? 'Currently working on' : 'Engineering, AI & Operations teams'}
             </div>
           </div>
 
@@ -151,14 +151,14 @@ export default function ManagerDashboard({
                 Impediments & Blockers
               </span>
               <span className="px-2 py-0.5 rounded-full bg-white text-amber-700 font-bold text-[10px] shadow-xs">
-                Escalated
+                {blockedTasks.length > 0 ? 'Urgent' : 'None'}
               </span>
             </div>
             <div className="text-3xl font-black text-slate-900 font-['Outfit'] mt-2">
-              {analytics?.blocked_tasks || 1} Blocked
+              {analytics?.blocked_tasks !== undefined ? analytics.blocked_tasks : blockedTasks.length} Blocked
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              Cluster quotas & third-party dependencies
+              Cluster quotas & dependencies
             </div>
           </div>
 
@@ -167,44 +167,46 @@ export default function ManagerDashboard({
         {/* RIGHT COLUMN (Span 8) */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* Section: Waiting for bills / verification */}
-          <div>
-            <div className="text-sm font-bold text-slate-900 mb-3 font-['Outfit']">
-              Waiting for verification
-            </div>
+          {/* Section: Waiting for verification (MANAGER ONLY - Removed for employees) */}
+          {currentUser?.role !== 'employee' && (
+            <div>
+              <div className="text-sm font-bold text-slate-900 mb-3 font-['Outfit']">
+                Waiting for verification ({pendingReviews.length})
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {pendingReviews.slice(0, 2).map((t) => (
-                <div
-                  key={t.id}
-                  className="intelly-card intelly-card-hover p-4 rounded-3xl flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <img
-                      src={t.assignees?.[0]?.user?.avatar_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
-                      alt="Avatar"
-                      className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-200 shrink-0"
-                    />
-                    <div className="truncate">
-                      <div className="text-xs font-bold text-slate-900 truncate">
-                        {t.assignees?.[0]?.user?.full_name || 'Team Assignee'}
-                      </div>
-                      <div className="text-[10px] text-slate-500 truncate">
-                        {t.title}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {pendingReviews.slice(0, 2).map((t) => (
+                  <div
+                    key={t.id}
+                    className="intelly-card intelly-card-hover p-4 rounded-3xl flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 truncate">
+                      <img
+                        src={t.assignees?.[0]?.user?.avatar_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100'}
+                        alt="Avatar"
+                        className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-200 shrink-0"
+                      />
+                      <div className="truncate">
+                        <div className="text-xs font-bold text-slate-900 truncate">
+                          {t.assignees?.[0]?.user?.full_name || 'Team Assignee'}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {t.title}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <button
-                    onClick={() => onSelectTask(t)}
-                    className="shrink-0 px-3 py-1.5 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-[11px] font-semibold transition-all shadow-sm"
-                  >
-                    Inspect evidence
-                  </button>
-                </div>
-              ))}
+                    <button
+                      onClick={() => onSelectTask(t)}
+                      className="shrink-0 px-3 py-1.5 rounded-full bg-[#141518] hover:bg-slate-800 text-white text-[11px] font-semibold transition-all shadow-sm"
+                    >
+                      Inspect evidence
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Section: Latest GitHub & Work Activity Transactions */}
           <div>

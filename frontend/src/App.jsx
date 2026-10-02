@@ -5,6 +5,8 @@ import ManagerDashboard from './components/ManagerDashboard';
 import ScheduleView from './components/ScheduleView';
 import TaskBoard from './components/TaskBoard';
 import TeamDirectory from './components/TeamDirectory';
+import ChatView from './components/ChatView';
+import SettingsView from './components/SettingsView';
 import VerificationModal from './components/VerificationModal';
 import CreateTaskModal from './components/CreateTaskModal';
 import SubmitEvidenceModal from './components/SubmitEvidenceModal';
@@ -17,6 +19,8 @@ export default function App() {
   const [tasks, setTasks] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [chatTargetUser, setChatTargetUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Modals state
@@ -30,16 +34,45 @@ export default function App() {
     loginAs('sarah.chen@taskflow.dev');
   }, []);
 
+  // Poll unread chat count periodically
+  useEffect(() => {
+    if (!currentUser) return;
+    loadUnreadChatCount();
+    const interval = setInterval(loadUnreadChatCount, 5000);
+    return () => clearInterval(interval);
+  }, [currentUser?.id]);
+
+  const loadUnreadChatCount = async () => {
+    try {
+      const res = await api.getChatUnreadCount();
+      setUnreadChatCount(res.unread_count || 0);
+    } catch {
+      // ignore
+    }
+  };
+
   const loginAs = async (email, password = null) => {
     try {
       setLoading(true);
-      const authData = password
-        ? await api.login(email, password)
-        : await api.switchPersona(email);
+      let authData;
+      try {
+        // Preferred instant switch persona endpoint
+        authData = await api.switchPersona(email);
+      } catch (e) {
+        // Fallback with credential login
+        let pwd = password;
+        if (!pwd) {
+          if (email.startsWith('admin')) pwd = 'admin123';
+          else if (email.startsWith('sarah') || email.startsWith('marcus')) pwd = 'manager123';
+          else pwd = 'emp123';
+        }
+        authData = await api.login(email, pwd);
+      }
 
       setAuthToken(authData.access_token);
       setCurrentUser(authData.user);
       await loadAppTelemetry();
+      loadUnreadChatCount();
     } catch (err) {
       console.error('Login error:', err);
     } finally {
@@ -107,6 +140,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         onSwitchUser={(email) => loginAs(email)}
+        unreadChatCount={unreadChatCount}
       />
 
       {/* Main Content Area */}
@@ -118,6 +152,8 @@ export default function App() {
           notifications={notifications}
           onMarkNotificationRead={handleMarkNotificationRead}
           currentUser={currentUser}
+          onNavigate={(tab) => setActiveTab(tab)}
+          unreadChatCount={unreadChatCount}
         />
 
         {/* Dynamic View Container */}
@@ -153,8 +189,28 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'messages' && (
+            <ChatView
+              currentUser={currentUser}
+              initialTargetUser={chatTargetUser}
+            />
+          )}
+
           {activeTab === 'team' && (
-            <TeamDirectory />
+            <TeamDirectory
+              onOpenChatWithUser={(user) => {
+                setChatTargetUser(user);
+                setActiveTab('messages');
+              }}
+              onSwitchUser={(email) => loginAs(email)}
+            />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsView
+              currentUser={currentUser}
+              onSwitchUser={(email) => loginAs(email)}
+            />
           )}
 
           {activeTab === 'verification' && (

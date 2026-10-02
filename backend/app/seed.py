@@ -6,7 +6,7 @@ from app.models.entities import (
     Department, User, TaskCategory, Task, TaskAssignee,
     TaskBlocker, GitHubIntegration, GitHubTaskLink, GitHubCommit,
     GitHubPullRequest, CommitAnalysis, TaskEvidence, EvidenceDocument,
-    Notification
+    Notification, ChatMessage
 )
 from app.models.enums import (
     UserRole, DepartmentType, TaskPriority, TaskStatus,
@@ -14,9 +14,92 @@ from app.models.enums import (
 )
 from app.services.verification_engine import VerificationEngine
 
+def seed_sample_chat_messages(db: Session):
+    """Seed initial direct messages if none exist yet"""
+    if db.query(ChatMessage).first():
+        return
+    
+    users = {u.email: u for u in db.query(User).all()}
+    sarah = users.get("sarah.chen@taskflow.dev")
+    alex = users.get("alex.dev@taskflow.dev")
+    priya = users.get("priya.ai@taskflow.dev")
+    elena = users.get("elena.growth@taskflow.dev")
+    marcus = users.get("marcus.vance@taskflow.dev")
+
+    if not sarah or not alex:
+        return
+
+    now = datetime.now(timezone.utc)
+    sample_msgs = [
+        # Sarah & Alex (Engineering discussion)
+        ChatMessage(
+            sender_id=alex.id,
+            receiver_id=sarah.id,
+            channel="direct",
+            message="Hey Sarah, I just pushed PR #42 for the OAuth2 Token Refresh. The verification heuristics score came out to 88/100!",
+            created_at=now - timedelta(hours=3),
+            is_read=True
+        ),
+        ChatMessage(
+            sender_id=sarah.id,
+            receiver_id=alex.id,
+            channel="direct",
+            message="Great work Alex! I reviewed the AST analysis and functional diff—looks rock solid. Approving shortly.",
+            created_at=now - timedelta(hours=2, minutes=45),
+            is_read=True
+        ),
+        # Sarah & Priya (AI Blocker)
+        ChatMessage(
+            sender_id=priya.id,
+            receiver_id=sarah.id,
+            channel="direct",
+            message="Hi Sarah, we hit the quota limit on the A100 GPU cluster while fine-tuning the 8B model. Can we escalate the quota request?",
+            created_at=now - timedelta(hours=1, minutes=30),
+            is_read=False
+        ),
+        ChatMessage(
+            sender_id=sarah.id,
+            receiver_id=priya.id,
+            channel="direct",
+            message="Looking into the DevOps quota allocation now Priya, will ping you once the node pool expands.",
+            created_at=now - timedelta(hours=1, minutes=10),
+            is_read=True
+        ),
+        # Marcus & Elena (Marketing campaign)
+        ChatMessage(
+            sender_id=elena.id,
+            receiver_id=marcus.id,
+            channel="direct",
+            message="Marcus, the Q4 Launch Asset bundle and PDF slide decks are uploaded and waiting for review on TaskFlow.",
+            created_at=now - timedelta(hours=2),
+            is_read=False
+        ),
+        ChatMessage(
+            sender_id=marcus.id,
+            receiver_id=elena.id,
+            channel="direct",
+            message="Thanks Elena! I'm reviewing the Figma mockups and copy deck now. Looks very crisp.",
+            created_at=now - timedelta(minutes=40),
+            is_read=True
+        ),
+        # Elena & Sarah (Cross-team query)
+        ChatMessage(
+            sender_id=elena.id,
+            receiver_id=sarah.id,
+            channel="direct",
+            message="Hi Sarah! Do we have the target release dates confirmed for the telemetry dashboard feature so marketing can prepare announcements?",
+            created_at=now - timedelta(minutes=25),
+            is_read=False
+        )
+    ]
+    db.add_all(sample_msgs)
+    db.commit()
+    print("[TaskFlow] Seeded sample chat messages!")
+
 def init_seed_data(db: Session):
     # Check if already seeded
     if db.query(User).first():
+        seed_sample_chat_messages(db)
         return
 
     print("[TaskFlow] Initializing database seed data...")

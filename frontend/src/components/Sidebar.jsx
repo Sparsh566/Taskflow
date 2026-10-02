@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, Calendar, Users, BarChart3, ShieldCheck, 
-  GitBranch, FolderGit2, Settings, LogOut, ChevronDown, CheckCircle2 
+  GitBranch, FolderGit2, Settings, LogOut, ChevronDown, CheckCircle2,
+  MessageSquare 
 } from 'lucide-react';
 
 const PRESET_USERS = [
@@ -17,7 +18,8 @@ export default function Sidebar({
   activeTab, 
   setActiveTab, 
   currentUser, 
-  onSwitchUser 
+  onSwitchUser,
+  unreadChatCount = 0
 }) {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
@@ -78,6 +80,25 @@ export default function Sidebar({
           </button>
 
           <button
+            onClick={() => setActiveTab('messages')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+              activeTab === 'messages'
+                ? 'bg-[#22242a] text-white font-semibold shadow-inner'
+                : 'text-slate-400 hover:text-white hover:bg-[#1a1b20]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-4 h-4 text-pink-400" />
+              <span>Direct Chat</span>
+            </div>
+            {unreadChatCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-pink-500 text-white text-[9px] font-bold flex items-center justify-center">
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
+
+          <button
             onClick={() => setActiveTab('team')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
               activeTab === 'team'
@@ -133,8 +154,12 @@ export default function Sidebar({
           </button>
 
           <button
-            onClick={() => alert("TaskFlow Settings configured: Role policies, GitHub webhooks, notification channels.")}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-[#1a1b20] transition-all"
+            onClick={() => setActiveTab('settings')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+              activeTab === 'settings'
+                ? 'bg-[#22242a] text-white font-semibold shadow-inner'
+                : 'text-slate-400 hover:text-white hover:bg-[#1a1b20]'
+            }`}
           >
             <Settings className="w-4 h-4" />
             <span>Settings</span>

@@ -1,149 +1,207 @@
-# TaskFlow — Phase 2 & Architecture Evolution Plan
+# TaskFlow — Phase 3 Engineering Architecture & Roadmap Plan
 
-## 📌 Executive Summary & Optimal Sequencing
+## 📌 Executive Overview & Strategic Mission
 
-This plan outlines the next phase of TaskFlow's evolution, incorporating:
-1. **Retractable Side Menu (UI Real-Estate)**
-2. **Dedicated Modern Login Page with Demo Sandbox Launcher**
-3. **Private & High-Security Admin Portal (Private credentials for owner only)**
-4. **Supabase Cloud PostgreSQL Migration & Storage**
-5. **Next-Gen Verification Engine (Multi-signal AI verification with human override)**
+TaskFlow has successfully completed **Phase 1** (Core Heuristic Verification Engine & Workbench) and **Phase 2** (UI Real-Estate, Modern Session Auth, Stealth Admin Isolation & Vault, Cloud Supabase Integration, Multi-Signal Verification & Human-in-the-Loop Overrides).
+
+### Historical Milestones Completed
+- [x] **Phase 1: Verification Engine Foundation** — Whitespace detection, comment churn filtering, autoformatter penalties, baseline scoring, and sandbox simulator.
+- [x] **Phase 2.1: Retractable Side Navigation** — Expandable/collapsible matte black sidebar with persistent preference storage and floating tooltips.
+- [x] **Phase 2.2: Dedicated Modern Authentication** — Polished login experience, Google / Gmail Single Sign-On, token persistence, and route protection.
+- [x] **Phase 2.3: Ultra-Secure Stealth Admin & Master Vault** — Unpredictable route (`/nexus-90210-k7v`), designated master admin (`106.jedi.master@gmail.com`), hardware access keys, public form lockout, and identity camouflage.
+- [x] **Phase 2.4: Supabase PostgreSQL & Storage Architecture** — Cloud database connection pooling, SQLAlchemy schema synchronization, and document storage service.
+- [x] **Phase 2.5: Multi-Signal Verification & Dispute Mechanics** — CI test telemetry, PR review approvals, merge status, AI advisory suggestions, manager overrides, and employee dispute workflows.
 
 ---
 
-## 🏗️ 1. Retractable Side Menu (UI Polish)
-*Placement: Phase 2.1 (Immediate)*
+### The Phase 3 Vision
+**Phase 3** transforms TaskFlow from a verified task manager into a **Realtime Enterprise Workflow & Live Verification Intelligence Platform**. It connects actual production developer infrastructure (GitHub App webhooks, live CI/CD pipelines, semantic LLM analysis) with instantaneous multi-user collaboration (WebSockets, live Kanban synchronization, interactive timeline planning, and compliance audit exports).
+
+---
+
+## 🏗️ Phase 3 Architecture Blueprint
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  TASKFLOW PHASE 3                                      │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                        │
+│   ┌──────────────────────┐      ┌────────────────────────┐      ┌──────────────────┐   │
+│   │   Phase 3.1          │      │   Phase 3.2            │      │   Phase 3.3      │   │
+│   │   Realtime Engine    │      │   GitHub Production    │      │   Semantic AI    │   │
+│   │   & Live Sync        │      │   Webhooks             │      │   Inspector      │   │
+│   │  - WebSockets / PubSub│     │  - HMAC SHA-256 Ingest │      │  - LLM Diff vs AC│   │
+│   │  - Instant Kanban    │      │  - Push & PR Events    │      │  - Stub / Mock   │   │
+│   │  - Live Team Chat    │      │  - Auto Branch Linking │      │    Detection     │   │
+│   │  - Push Toasts       │      │  - CI Workflow Sync    │      │  - Secret Scan   │   │
+│   └──────────┬───────────┘      └───────────┬────────────┘      └─────────┬────────┘   │
+│              │                              │                             │            │
+│              └──────────────────────┬───────┴─────────────────────────────┘            │
+│                                     ▼                                                  │
+│   ┌────────────────────────────────────────────────────────────────────────────────┐   │
+│   │   Phase 3.4 & 3.5: Enterprise Workflow Intelligence & Compliance               │   │
+│   │  - DAG Task Dependencies & Cycle Detection  - Interactive Gantt Timeline       │   │
+│   │  - Contributor Workload & Velocity Heatmap  - PDF/CSV Compliance Audit Exports │   │
+│   └────────────────────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⚡ 1. Phase 3.1: Realtime Event Engine & Multi-User Collaboration
 
 ### Motivation
-Task verification requires inspecting dense information: diffs, heuristic score gauges, acceptance checklists, and commit logs. A fixed 256px sidebar occupies substantial screen space on laptops and tablets.
+In modern engineering teams, tasks, PR statuses, and reviews move fast. Requiring users to refresh their browser to observe a colleague's task submission or a manager's verification verdict causes stale data conflicts and friction.
 
-### Implementation Architecture
-1. **Collapsible Sidebar Rail**:
-   - Support two states: `expanded` (w-64) and `collapsed` (w-20 icon-only rail).
-   - Collapse toggle button with smooth CSS transform (`transition-all duration-300 ease-in-out`).
-   - Store collapsed state in `localStorage` so user preference persists across page reloads.
-2. **Tooltip Hover in Collapsed Mode**:
-   - Display floating tooltips on icon hover when collapsed so navigation remains intuitive.
-3. **Responsive Mobile Drawer**:
-   - Slide-over backdrop overlay on screens $< 1024\text{px}$.
+### Technical Architecture
+1. **FastAPI WebSocket Connection Manager**:
+   - Implement `ConnectionManager` in `backend/app/services/websocket_manager.py` maintaining active user sockets keyed by `workspace_id` and `user_id`.
+   - Heartbeat ping/pong telemetry every 30 seconds with automatic client reconnection backoff.
+   - Dual-mode broadcasting: Workspace-wide channels (e.g. `workspace:{id}`) and private user channels (e.g. `user:{id}`).
+2. **Instant Board Synchronization**:
+   - When a task is moved, verified, or updated, broadcast a lightweight event payload:
+     ```json
+     {
+       "type": "TASK_UPDATED",
+       "task_id": "task-uuid",
+       "new_status": "in_review",
+       "updated_by": "Alex Rivera",
+       "timestamp": "2026-10-03T14:30:00Z"
+     }
+     ```
+   - Frontend React query cache or state handler updates the card position without re-fetching entire task arrays.
+3. **Live Team Chat Enhancements**:
+   - Replace poll-based chat fetching with instant WebSocket push.
+   - Add real-time typing indicators (`user_typing` event with 3-second debounce).
+   - Dynamic unread count badges with audio/visual pulse triggers.
+4. **Interactive In-App Notification Toasts**:
+   - Push toast alerts for critical lifecycle events:
+     - *"Sarah Chen approved your submission for 'Auth Gate' (Score: 98/100)"*
+     - *"Alex Rivera raised a blocker on 'Database Migration'"*
+     - *"New task assigned to you by Sarah Chen"*
 
 ---
 
-## 🔐 2. Dedicated Login Page & Secure Auth Flow
-*Placement: Phase 2.2*
+## 🔗 2. Phase 3.2: Production GitHub App & Live CI/CD Webhook Ingest
 
 ### Motivation
-Currently, the application defaults to logging in as Sarah Chen on reload. A professional application requires an explicit, stunning authentication gate that separates genuine user credentials from demo sandbox visitors.
+While the sandbox simulator is ideal for reviewers and recruiters, real engineering teams need TaskFlow to ingest real GitHub events as commits are pushed and PRs are merged.
 
-### Architecture & Components
-1. **Modern Dual-Mode Authentication Screen**:
-   - **Form 1: Secure Direct Login**: Email and password input for registered members and the Admin.
-   - **Form 2: 1-Click Sandbox Fast-Track**: "Explore Demo Sandbox as Manager (Sarah) or Employee (Alex)" button for recruiters/reviewers to instantly preview without needing to register or copy credentials.
-2. **Session & Token Management**:
-   - Save JWT access token to `localStorage` with automated token refresh / expiry check.
-   - Add explicit **Logout** action in the sidebar that clears session state and redirects to `/login`.
-   - Protected route wrapper: unauthenticated users are directed to the Login page.
-
----
-
-## 🛡️ 3. Private, Hardened Admin Portal (Owner Only)
-*Placement: Phase 2.3*
-
-### Security Architecture & Isolation
-- **Credentials Kept Private**: The Admin credentials will **NEVER** be displayed in the README, public demo buttons, or client-side bundles. Only you possess the master login.
-- **Removed from Public Persona Switcher**: The public 1-click persona bar will only switch between sandbox Manager and Employee. Admin access requires direct login with master credentials.
-- **Backend Guard Rails**:
-  - Protected API routes under `/api/v1/admin/*` guarded by `require_admin` dependency verifying `user.role == UserRole.ADMIN` and a cryptographically signed JWT.
-  - Rate limiting on admin login attempts to prevent brute-force attacks.
-  - Master Admin account seeded via secure environment variables (`INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`).
-
-### Admin Console Capabilities
-1. **User & Access Management**:
-   - View, create, activate, and deactivate team member accounts.
-   - Promote/demote user roles (Manager, Employee).
-   - Password reset triggers for members.
-2. **Workspace & Integration Controls**:
-   - Manage company-wide project workspaces and link GitHub repositories.
-   - Configure global verification heuristic thresholds.
-3. **Security & Audit Logs**:
-   - Full chronological audit log of all managerial score overrides, task rejections, and login events.
-4. **Sandbox & System Controls**:
-   - Master button to reset or re-seed sandbox data without restarting the server.
-   - Supabase database connection health, latency, and pool monitoring.
+### Technical Architecture
+1. **Cryptographically Verified Webhook Endpoint**:
+   - Endpoint: `POST /api/v1/integrations/github/webhook`.
+   - Validate incoming payloads using HMAC SHA-256 with the secret stored in `GITHUB_WEBHOOK_SECRET` via `X-Hub-Signature-256` header.
+2. **Automated Event Handlers**:
+   - **`push` Event**:
+     - Extracts commit message, author email/username, added/modified/removed files, and unified git diffs.
+     - Matches branch name or commit message keywords (`fixes #TASK-102`, `ref/task-102`) to active tasks.
+     - Feeds the unified diff into `VerificationEngine.analyze_commit_diff()` in background worker.
+   - **`pull_request` Event**:
+     - Tracks PR states: `opened`, `synchronize` (new commits pushed), `closed` (with `merged == true`), and `review_requested`.
+     - Automatically updates `GitHubTaskLink` and `GitHubPullRequest` records in database.
+   - **`pull_request_review` Event**:
+     - Ingests reviewer approvals, changes requested, and review comments.
+     - Feeds into the `multi_signals` calculation matrix.
+   - **`workflow_run` / `check_run` Event**:
+     - Ingests GitHub Actions CI build/test results (`conclusion: "success" | "failure"`).
+3. **Hybrid Sandbox / Live Repo Mode**:
+   - Each workspace can toggle between **Sandbox Simulation Mode** (for demonstrations and manual commit testing) and **Production GitHub Webhook Mode** with linked repository coordinates (`owner/repo`).
 
 ---
 
-## 🗄️ 4. Supabase Cloud Migration (PostgreSQL & Storage)
-*Placement: Phase 2.4*
+## 🧠 3. Phase 3.3: Advanced Semantic AI Verification Engine
 
-### Comparative Tradeoff Matrix
+### Motivation
+Heuristics detect code volume, whitespace, and commit message length, but cannot distinguish between authentic business logic and hollow code stubs (e.g. 50 lines of `if True: pass` or mock return objects that pass linters but do zero work).
 
-| Feature | Firebase (Firestore) | Supabase (PostgreSQL) | Recommendation |
+### Technical Architecture
+1. **Multi-Model LLM Adapter**:
+   - Service: `backend/app/services/ai_verification_service.py`.
+   - Pluggable provider support: Google Gemini API (`gemini-1.5-pro` / `gemini-1.5-flash`), OpenAI (`gpt-4o`), or Anthropic Claude.
+   - Graceful fallback: If no API key is configured or the external API is unreachable, automatically fall back to the existing deterministic heuristic engine.
+2. **Semantic Verification Criteria**:
+   - **Acceptance Criteria Cross-Referencing**:
+     - Feed the task's stated requirements and the actual git patch diff into the prompt.
+     - Evaluate: Did the PR actually implement what was requested, or only a cosmetic portion?
+   - **Stub & Mock Detection**:
+     - Analyze diffs for suspicious evasion patterns: empty function bodies, commented-out logic, hardcoded test passes, or placeholder comments (`TODO: implement later`).
+   - **Secret & Vulnerability Exposure**:
+     - Scans diffs for accidentally committed credentials (`AKIA...`, `Bearer ...`, private keys, plain passwords).
+3. **Interactive AI Task Assistant**:
+   - Add an AI Assistance drawer in the Task Verification modal.
+   - Contributor view: *"How can I improve my verification score before submitting?"*
+   - Manager view: *"Summarize the technical risks and key architectural changes in this PR."*
+
+---
+
+## 📊 4. Phase 3.4: Task Dependency Engine, Gantt Timeline & Capacity Heatmap
+
+### Motivation
+Engineering projects are networks of interdependent tasks. Without dependency modeling and timeline visualization, teams risk working on blocked items or over-allocating work to specific contributors.
+
+### Technical Architecture
+1. **Directed Acyclic Graph (DAG) Task Dependency Engine**:
+   - New database model `TaskDependency(blocking_task_id, dependent_task_id, dependency_type)`.
+   - Prevent cyclic dependency loops using Tarjan's or topological sort validation on task linking.
+   - Auto-flagging: If Task A is blocked by Task B, Task A cannot be moved to `in_progress` until Task B reaches `verified` or `approved`.
+2. **Interactive Gantt & Milestone Timeline View**:
+   - Add new tab in frontend: **"Timeline & Gantt"**.
+   - Draggable sprint timeline with milestone flags, dependency linking arrows, and critical path highlighting.
+   - Visual filters: By assignee, department, milestone, or priority.
+3. **Contributor Workload & Velocity Heatmap**:
+   - Calculate live allocation points: $\sum (\text{Active Story Points} \times \text{Complexity Rating})$.
+   - Display capacity indicators on Team Directory and Task Assignment modals:
+     - 🟢 *Available (< 3 active tasks)*
+     - 🟡 *Optimal Load (3–5 active tasks)*
+     - 🔴 *Over-Capacity (> 5 active tasks or high blocker ratio)*
+
+---
+
+## 📑 5. Phase 3.5: Enterprise Audit Reports & Compliance Exporter
+
+### Motivation
+Enterprise organizations and clients require objective documentation of completed work for sprint retrospectives, client billing, SOC2 compliance, and performance reviews.
+
+### Technical Architecture
+1. **Audit Export Engine (`/api/v1/workspaces/{id}/export`)**:
+   - **CSV Export**: Contributor breakdown, verified lines of code, acceptance criteria compliance %, managerial overrides, and final scores.
+   - **Executive PDF Verification Dossier**: Clean, branded summary for client sign-off containing:
+     - Project metadata and sprint goals.
+     - Completed tasks with commit hashes, verified PR links, and manager approval timestamps.
+     - Itemized explanation of why deliverables met objective standards.
+2. **Granular Role-Based Access Control (RBAC)**:
+   - Expand roles beyond binary Manager/Employee:
+     - **Organization Owner / Master Admin**: System-wide control via Master Vault.
+     - **Workspace Admin**: Can configure GitHub webhooks, heuristic thresholds, and invite members.
+     - **Tech Lead / Manager**: Can approve/reject tasks, execute overrides, and assign work.
+     - **Contributor / Engineer**: Can submit evidence, simulate commits, raise blockers, and dispute scores.
+     - **Observer / Client Viewer**: Read-only access to Kanban, timeline, and audit reports without modification permissions.
+
+---
+
+## 📅 Detailed Phase 3 Execution Roadmap
+
+| Milestone | Key Deliverables | Target Files & Components | Verification Gate |
 |---|---|---|---|
-| **Data Model Compatibility** | ❌ NoSQL Document Store. Would require completely replacing SQLAlchemy models, foreign keys, and relational queries. | ✅ Native PostgreSQL. 100% drop-in compatible with TaskFlow's existing SQLAlchemy 2.0 schema and migrations. | **Supabase is drastically superior.** |
-| **Connection & Deployment** | ⚠️ Requires Firebase Admin SDK and client-side SDK rewrite. | ✅ Direct standard `DATABASE_URL` (`postgresql://postgres:[password]@db...supabase.co:5432/postgres`). | **Supabase** |
-| **Evidence File Storage** | Firebase Cloud Storage (GCP bucket). | Supabase Storage (S3-compatible, built-in bucket policies). | **Supabase** |
-| **Realtime Updates (Phase 3)** | Realtime Database / Firestore listeners. | Postgres Realtime (listen to task status and verification changes). | **Supabase** |
-| **Cost & Free Tier** | Pay-as-you-go with document read limits. | Generous free tier with 500MB database, pooling, and automated backups. | **Supabase** |
-
-### Implementation Steps
-1. Add `psycopg2-binary>=2.9.9` to `backend/requirements.txt`.
-2. Connect backend to Supabase project via `DATABASE_URL` with connection pooling enabled (port 6543 / 5432).
-3. Verify automatic table migration on startup in `lifespan`.
-4. Configure Supabase Storage bucket for deliverable documents (PDFs, checklists).
+| **Phase 3.1** | **Realtime Engine & Live Sync** | `backend/app/services/websocket_manager.py`<br>`frontend/src/services/websocket.js`<br>`frontend/src/components/TaskBoard.jsx` | Instant cross-browser card updates and live chat without reload |
+| **Phase 3.2** | **Production GitHub App Webhook Ingest** | `backend/app/api/v1/integrations.py`<br>`backend/app/services/github_service.py`<br>`frontend/src/components/SettingsView.jsx` | HMAC SHA-256 signature verification and automated commit diff ingestion |
+| **Phase 3.3** | **Advanced Semantic AI Verification** | `backend/app/services/ai_verification_service.py`<br>`frontend/src/components/VerificationModal.jsx` | LLM semantic comparison against acceptance criteria with stub detection |
+| **Phase 3.4** | **Dependencies, Gantt & Capacity** | `backend/app/models/entities.py`<br>`frontend/src/components/TimelineGanttView.jsx`<br>`frontend/src/components/TeamDirectory.jsx` | DAG cycle prevention test suite and interactive sprint timeline |
+| **Phase 3.5** | **Audit Exporter & Granular RBAC** | `backend/app/services/export_service.py`<br>`backend/app/api/v1/workspaces.py`<br>`frontend/src/components/SettingsView.jsx` | One-click PDF/CSV sprint verification dossier generation |
 
 ---
 
-## 🧠 5. Core Verification Enhancements
+## 🎯 Verification & Quality Assurance Strategy
 
-### 5.1 Multi-Signal Verification (Beyond Diff Size)
-- **CI Build & Test Status**: Pass/Fail telemetry from GitHub Actions / CI webhooks.
-- **Pull Request Review Approvals**: Checks whether required peer reviews were approved prior to submission.
-- **PR Merge Verification**: Validates whether changes were squashed/merged into target branch.
-
-### 5.2 AI-Assisted PR Summary vs. Task Description
-- Integrate LLM analysis to compare the PR diff summary against the task's stated acceptance criteria.
-- Present this as an **advisory suggestion** for the manager rather than a final verdict.
-
-### 5.3 Manager Override with Feedback Comments
-- Managers can override automated heuristic scores with stored feedback notes.
-- Logs overrides in `VerificationReview` audit table to provide transparency and accountability.
-
-### 5.4 Employee Dispute Mechanism
-- Provide a *"Dispute Score"* button on task view for employees.
-- Submits structured rebuttal with attached clarification, flagging the task for managerial review.
-
----
-
-## 📅 Execution Roadmap
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ [x] Phase 2.1: UI Real-Estate & Retractable Sidebar                     │
-│  - Collapsible/expandable sidebar with icon-only rail (w-64 vs w-20)    │
-│  - Tooltips for collapsed state & localStorage preference persistence   │
-├─────────────────────────────────────────────────────────────────────────┤
-│ [x] Phase 2.2: Dedicated Login Page & Session Gate                      │
-│  - Modern login view with credentials form & 1-click sandbox access     │
-│  - Token storage, route protection, and explicit logout mechanics       │
-├─────────────────────────────────────────────────────────────────────────┤
-│ [x] Phase 2.3: Private & Secured Admin Portal                           │
-│  - Removed Admin from public persona switcher (private credentials)     │
-│  - Backend /api/v1/admin router with strict require_admin role check    │
-│  - Admin Console: user directory, role/status updates, audit logs       │
-├─────────────────────────────────────────────────────────────────────────┤
-│ [x] Phase 2.4: Supabase Cloud PostgreSQL & Storage Integration          │
-│  - Added psycopg2-binary driver and cloud connection pooling configs    │
-│  - StorageService for Supabase Storage bucket with local fallback       │
-├─────────────────────────────────────────────────────────────────────────┤
-│ [x] Phase 2.5: Multi-Signal Verification & Human-in-the-Loop Overrides  │
-│  - CI test suite telemetry, PR reviews & merge verification signals     │
-│  - Manager score override with required reason notes                    │
-│  - Employee dispute mechanism with structured rebuttal workflow         │
-│  - AI-assisted deliverable advisory comparison                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-*Status: Phase 2 fully implemented, verified, and tested across backend (24 unit tests passing) and frontend production bundle (Vite build successful).*
+1. **Automated Unit & Integration Testing**:
+   - WebSocket connection lifecycle, room subscriptions, and reconnection resilience.
+   - Webhook signature validation, replay attack prevention, and malformed payload handling.
+   - DAG dependency validation: unit tests asserting error on circular dependency creation.
+   - LLM fallback tests: verifying deterministic engine operates when external APIs fail.
+2. **Security & Camouflage Preservation**:
+   - Ensure the Master Vault (`nexus-90210-k7v`) and `106.jedi.master@gmail.com` remain isolated across all new WebSocket channels and workspace exports.
+   - No sensitive admin telemetry broadcasted over public workspace sockets.
+3. **Performance Targets**:
+   - WebSocket event latency: $< 50\text{ms}$ broadcast time within the same workspace.
+   - Webhook processing: Complete commit diff ingestion and score computation in $< 1.5\text{s}$.
+   - Bundle impact: Maintain frontend production build $< 500\text{KB}$ gzipped.

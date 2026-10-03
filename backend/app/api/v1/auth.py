@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_password, create_access_token
 from app.models.entities import User
+from app.models.enums import UserRole
 from app.schemas.api_schemas import LoginRequest, PersonaSwitchRequest, Token, UserRead
 from app.api.deps import get_current_user
 
@@ -37,6 +38,11 @@ def switch_persona(data: PersonaSwitchRequest, db: Session = Depends(get_db)):
         )
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account is deactivated")
+    if user.role == UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin portal access is strictly protected. Please sign in with master administrator credentials."
+        )
 
     access_token = create_access_token(subject=user.id)
     return {

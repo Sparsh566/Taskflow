@@ -14,6 +14,8 @@ import BlockerModal from './components/BlockerModal';
 import CreateWorkspaceModal from './components/CreateWorkspaceModal';
 import AddUserModal from './components/AddUserModal';
 import DemoSandboxBanner from './components/DemoSandboxBanner';
+import LoginPage from './components/LoginPage';
+import AdminPortal from './components/AdminPortal';
 import { api, setAuthToken } from './services/api';
 
 export default function App() {
@@ -38,10 +40,32 @@ export default function App() {
   const [evidenceTask, setEvidenceTask] = useState(null);
   const [blockerTask, setBlockerTask] = useState(null);
 
-  // Initialize with Sarah Chen (Manager) by default
+  // Check for existing session on page load
   useEffect(() => {
-    loginAs('sarah.chen@taskflow.dev');
+    checkExistingSession();
   }, []);
+
+  const checkExistingSession = async () => {
+    const token = localStorage.getItem('taskflow_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const user = await api.getMe();
+      setCurrentUser(user);
+      const defaultWs = await loadWorkspaces();
+      await loadAppTelemetry(defaultWs?.id);
+      loadUnreadChatCount();
+    } catch (err) {
+      console.warn('Session expired or invalid, redirecting to login:', err);
+      handleLogout();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Poll unread chat count periodically
   useEffect(() => {
@@ -111,6 +135,28 @@ export default function App() {
     }
   };
 
+  const handleLoginSuccess = async (user, token) => {
+    setAuthToken(token);
+    setCurrentUser(user);
+    const defaultWs = await loadWorkspaces();
+    await loadAppTelemetry(defaultWs?.id);
+    loadUnreadChatCount();
+    if (user.role === 'admin') {
+      setActiveTab('admin');
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
+
+  const handleLogout = () => {
+    setAuthToken('');
+    setCurrentUser(null);
+    setTasks([]);
+    setNotifications([]);
+    setActiveWorkspace(null);
+    setActiveTab('dashboard');
+  };
+
   const loadAppTelemetry = async (targetWsId = undefined) => {
     try {
       const wsId = targetWsId !== undefined ? targetWsId : activeWorkspace?.id;
@@ -156,6 +202,7 @@ export default function App() {
     }
   };
 
+  // Loading state during initial session inspection
   if (loading && !currentUser) {
     return (
       <div className="min-h-screen w-full bg-[#f6f4ee] flex items-center justify-center text-slate-700 font-['Outfit']">
@@ -169,15 +216,21 @@ export default function App() {
     );
   }
 
+  // Phase 2.2: If unauthenticated, gate with dedicated modern Login Page
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="min-h-screen w-full bg-[#f6f4ee] flex flex-row text-slate-900 font-['Inter']">
       
-      {/* Matte Black Left Sidebar from reference UI */}
+      {/* Matte Black Retractable Sidebar (Phase 2.1) */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         onSwitchUser={(email) => loginAs(email)}
+        onLogout={handleLogout}
         unreadChatCount={unreadChatCount}
         workspaces={workspaces}
         activeWorkspace={activeWorkspace}
@@ -263,6 +316,14 @@ export default function App() {
             <SettingsView
               currentUser={currentUser}
               onSwitchUser={(email) => loginAs(email)}
+            />
+          )}
+
+          {/* Phase 2.3: Admin Portal */}
+          {activeTab === 'admin' && currentUser?.role === 'admin' && (
+            <AdminPortal
+              currentUser={currentUser}
+              onOpenAddUser={() => setShowAddUserModal(true)}
             />
           )}
 

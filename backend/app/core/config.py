@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     GITHUB_API_BASE_URL: str = "https://api.github.com"
     GITHUB_DEFAULT_TOKEN: Optional[str] = None
 
+    # Supabase Integration (PostgreSQL & Storage)
+    SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL", None)
+    SUPABASE_KEY: Optional[str] = os.getenv("SUPABASE_KEY", None)
+    SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "taskflow-evidence")
+
+    # Secure Admin Initial Account
+    INITIAL_ADMIN_EMAIL: str = os.getenv("INITIAL_ADMIN_EMAIL", "admin@taskflow.dev")
+    INITIAL_ADMIN_PASSWORD: str = os.getenv("INITIAL_ADMIN_PASSWORD", "admin123")
+
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
 
 settings = Settings()

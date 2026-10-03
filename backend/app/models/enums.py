@@ -46,3 +46,4 @@ class NotificationType(str, enum.Enum):
     SUBMITTED_FOR_REVIEW = "submitted_for_review"
     TASK_APPROVED = "task_approved"
     TASK_REJECTED = "task_rejected"
+    TASK_DISPUTED = "task_disputed"

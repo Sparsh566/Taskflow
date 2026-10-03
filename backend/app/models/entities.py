@@ -237,6 +237,11 @@ class VerificationReview(Base):
     verdict = Column(SQLEnum(VerificationStatus), nullable=False) # manager_approved or manager_rejected
     feedback_notes = Column(Text, nullable=True)
     evaluated_github_metrics = Column(JSON, nullable=True)
+    override_score = Column(Numeric(5, 2), nullable=True)
+    override_reason = Column(Text, nullable=True)
+    is_disputed = Column(Boolean, default=False, nullable=False)
+    dispute_reason = Column(Text, nullable=True)
+    disputed_at = Column(DateTime(timezone=True), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     task = relationship("Task", back_populates="reviews")

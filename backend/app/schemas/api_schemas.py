@@ -238,6 +238,8 @@ class VerificationReviewCreate(BaseModel):
     verdict: VerificationStatus # manager_approved or manager_rejected
     feedback_notes: Optional[str] = None
     evidence_id: Optional[str] = None
+    override_score: Optional[float] = None
+    override_reason: Optional[str] = None
 
 class VerificationReviewRead(BaseModel):
     id: str
@@ -246,10 +248,28 @@ class VerificationReviewRead(BaseModel):
     verdict: VerificationStatus
     feedback_notes: Optional[str] = None
     evaluated_github_metrics: Optional[Dict[str, Any]] = None
+    override_score: Optional[float] = None
+    override_reason: Optional[str] = None
+    is_disputed: bool = False
+    dispute_reason: Optional[str] = None
+    disputed_at: Optional[datetime] = None
     reviewer: Optional[UserRead] = None
     reviewed_at: datetime
     class Config:
         from_attributes = True
+
+class TaskDisputeRequest(BaseModel):
+    dispute_reason: str
+    additional_evidence_url: Optional[str] = None
+
+class AdminUserUpdateRole(BaseModel):
+    role: UserRole
+
+class AdminUserUpdateStatus(BaseModel):
+    is_active: bool
+
+class AdminResetPassword(BaseModel):
+    new_password: str
 
 # --- Full Task Read with Relations ---
 class TaskAssigneeRead(BaseModel):

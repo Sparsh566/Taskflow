@@ -146,4 +146,43 @@ export const api = {
   markChatMessageRead: (id) =>
     request(`/chat/messages/${id}/read`, { method: 'POST' }),
   getChatUnreadCount: () => request('/chat/unread-count'),
+
+  // Employee Dispute
+  disputeTask: (taskId, reason, additionalEvidenceUrl = null) =>
+    request(`/tasks/${taskId}/dispute`, {
+      method: 'POST',
+      body: JSON.stringify({
+        dispute_reason: reason,
+        additional_evidence_url: additionalEvidenceUrl,
+      }),
+    }),
+
+  // Admin Portal & Diagnostics
+  getAdminUsers: () => request('/admin/users'),
+  createAdminUser: (data) =>
+    request('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateUserRole: (userId, role) =>
+    request(`/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    }),
+  updateUserStatus: (userId, isActive) =>
+    request(`/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_active: isActive }),
+    }),
+  resetUserPassword: (userId, newPassword) =>
+    request(`/admin/users/${userId}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ new_password: newPassword }),
+    }),
+  getAuditLogs: (limit = 50) => request(`/admin/audit-logs?limit=${limit}`),
+  getDbHealth: () => request('/admin/db-health'),
+  resetSandbox: () =>
+    request('/admin/sandbox/reset', {
+      method: 'POST',
+    }),
 };

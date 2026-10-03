@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.entities import (
-    Task, TaskEvidence, EvidenceDocument, VerificationReview, User
+    Task, TaskEvidence, EvidenceDocument, VerificationReview, User, Notification, ActivityLog
 )
-from app.models.enums import TaskStatus, VerificationStatus, UserRole
+from app.models.enums import TaskStatus, VerificationStatus, UserRole, NotificationType
 from app.schemas.api_schemas import (
     SubmitEvidenceRequest, TaskEvidenceRead,
-    VerificationReviewCreate, VerificationReviewRead
+    VerificationReviewCreate, VerificationReviewRead, TaskDisputeRequest
 )
 from app.api.deps import get_current_user, require_manager_or_admin
 from app.services.verification_engine import VerificationEngine
@@ -94,7 +94,9 @@ def review_task_submission(
         reviewer_id=current_user.id,
         verdict=review_in.verdict,
         feedback_notes=review_in.feedback_notes,
-        evaluated_github_metrics=summary
+        evaluated_github_metrics=summary,
+        override_score=review_in.override_score,
+        override_reason=review_in.override_reason
     )
     db.add(review)
 
@@ -106,9 +108,79 @@ def review_task_submission(
         task.status = TaskStatus.REJECTED
 
     task.updated_at = now
+
+    # Log activity
+    log = ActivityLog(
+        user_id=current_user.id,
+        action="review_submitted",
+        entity_type="task",
+        entity_id=task.id,
+        action_metadata={
+            "verdict": review_in.verdict.value,
+            "has_override": bool(review_in.override_score is not None),
+            "override_score": review_in.override_score
+        }
+    )
+    db.add(log)
+
     db.commit()
     db.refresh(review)
 
     is_approved = (review_in.verdict == VerificationStatus.MANAGER_APPROVED)
     NotificationService.notify_review_result(db, task, current_user, is_approved, review_in.feedback_notes)
     return review
+
+@router.post("/dispute", response_model=Dict[str, Any])
+def dispute_task_score(
+    task_id: str,
+    dispute_in: TaskDisputeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    latest_review = db.query(VerificationReview).filter(
+        VerificationReview.task_id == task_id
+    ).order_by(VerificationReview.reviewed_at.desc()).first()
+
+    now = datetime.now(timezone.utc)
+    if latest_review:
+        latest_review.is_disputed = True
+        latest_review.dispute_reason = dispute_in.dispute_reason
+        latest_review.disputed_at = now
+
+    task.status = TaskStatus.UNDER_REVIEW
+    task.updated_at = now
+
+    # Create notification for managers / task creator
+    target_reviewer_id = latest_review.reviewer_id if latest_review else task.creator_id
+    notif = Notification(
+        user_id=target_reviewer_id,
+        task_id=task.id,
+        type=NotificationType.TASK_DISPUTED,
+        title="Task Score Disputed",
+        message=f"{current_user.full_name} submitted a dispute for '{task.title}': \"{dispute_in.dispute_reason[:120]}\""
+    )
+    db.add(notif)
+
+    # Activity log
+    log = ActivityLog(
+        user_id=current_user.id,
+        action="score_disputed",
+        entity_type="task",
+        entity_id=task.id,
+        action_metadata={
+            "dispute_reason": dispute_in.dispute_reason,
+            "evidence_url": dispute_in.additional_evidence_url
+        }
+    )
+    db.add(log)
+
+    db.commit()
+    return {
+        "success": True,
+        "message": "Dispute recorded successfully. Task status moved to Under Review for managerial reassessment.",
+        "task_id": task.id
+    }

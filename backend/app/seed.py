@@ -175,9 +175,10 @@ def init_seed_data(db: Session):
     db.flush()
 
     # 3. Users
+    from app.core.config import settings
     user_admin = User(
-        email="admin@taskflow.dev",
-        hashed_password=get_password_hash("admin123"),
+        email=settings.INITIAL_ADMIN_EMAIL,
+        hashed_password=get_password_hash(settings.INITIAL_ADMIN_PASSWORD),
         full_name="System Administrator",
         role=UserRole.ADMIN,
         avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"

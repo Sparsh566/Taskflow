@@ -25,6 +25,16 @@ async def lifespan(app: FastAPI):
             conn.commit()
         except Exception:
             pass
+        try:
+            from sqlalchemy import text
+            conn.execute(text("ALTER TABLE verification_reviews ADD COLUMN override_score NUMERIC(5, 2)"))
+            conn.execute(text("ALTER TABLE verification_reviews ADD COLUMN override_reason TEXT"))
+            conn.execute(text("ALTER TABLE verification_reviews ADD COLUMN is_disputed BOOLEAN DEFAULT 0"))
+            conn.execute(text("ALTER TABLE verification_reviews ADD COLUMN dispute_reason TEXT"))
+            conn.execute(text("ALTER TABLE verification_reviews ADD COLUMN disputed_at DATETIME"))
+            conn.commit()
+        except Exception:
+            pass
 
     # Seed default departments, users, and tasks
     db = SessionLocal()

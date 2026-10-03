@@ -192,6 +192,8 @@ class CommitAnalysis(Base):
     is_trivial_reformat = Column(Boolean, default=False, nullable=False)
     heuristic_significance_score = Column(Numeric(5, 2), default=100.00, nullable=False)
     risk_flags = Column(JSON, default=list, nullable=False) # e.g. ["repeated_commit_message"]
+    explanation = Column(Text, nullable=True)
+    score_breakdown = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     commit = relationship("GitHubCommit", back_populates="analysis")

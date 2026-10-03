@@ -144,6 +144,8 @@ class GitHubCommitAnalysisRead(BaseModel):
     is_trivial_reformat: bool
     heuristic_significance_score: float
     risk_flags: List[str]
+    explanation: Optional[str] = None
+    score_breakdown: Optional[List[Dict[str, Any]]] = None
     class Config:
         from_attributes = True
 

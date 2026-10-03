@@ -18,6 +18,13 @@ async def lifespan(app: FastAPI):
             conn.commit()
         except Exception:
             pass
+        try:
+            from sqlalchemy import text
+            conn.execute(text("ALTER TABLE commit_analysis ADD COLUMN explanation TEXT"))
+            conn.execute(text("ALTER TABLE commit_analysis ADD COLUMN score_breakdown JSON"))
+            conn.commit()
+        except Exception:
+            pass
 
     # Seed default departments, users, and tasks
     db = SessionLocal()

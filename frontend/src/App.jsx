@@ -13,6 +13,7 @@ import SubmitEvidenceModal from './components/SubmitEvidenceModal';
 import BlockerModal from './components/BlockerModal';
 import CreateWorkspaceModal from './components/CreateWorkspaceModal';
 import AddUserModal from './components/AddUserModal';
+import DemoSandboxBanner from './components/DemoSandboxBanner';
 import { api, setAuthToken } from './services/api';
 
 export default function App() {
@@ -197,6 +198,12 @@ export default function App() {
           unreadChatCount={unreadChatCount}
           activeWorkspace={activeWorkspace}
           onOpenAddUser={() => setShowAddUserModal(true)}
+        />
+
+        {/* Live Demo Sandbox & 1-Click Persona Switcher */}
+        <DemoSandboxBanner
+          currentUser={currentUser}
+          onSwitchUser={(email) => loginAs(email)}
         />
 
         {/* Dynamic View Container */}

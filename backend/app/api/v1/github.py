@@ -117,7 +117,9 @@ def sync_task_commits(
             is_comment_only=analysis_result["is_comment_only"],
             is_trivial_reformat=analysis_result["is_trivial_reformat"],
             heuristic_significance_score=analysis_result["heuristic_significance_score"],
-            risk_flags=analysis_result["risk_flags"]
+            risk_flags=analysis_result["risk_flags"],
+            explanation=analysis_result.get("explanation"),
+            score_breakdown=analysis_result.get("score_breakdown")
         )
         db.add(analysis)
         saved_commits.append(commit.id)

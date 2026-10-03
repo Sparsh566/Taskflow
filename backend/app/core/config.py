@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "TaskFlow"
@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
-    # SQLite by default for simple dev zero-dependency, switchable to PostgreSQL
-    DATABASE_URL: str = "sqlite:///./taskflow.db"
+    # SQLite by default for simple dev zero-dependency, switchable to PostgreSQL in cloud
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./taskflow.db")
 
     # CORS origins
     BACKEND_CORS_ORIGINS: List[str] = [
@@ -24,8 +24,6 @@ class Settings(BaseSettings):
     GITHUB_API_BASE_URL: str = "https://api.github.com"
     GITHUB_DEFAULT_TOKEN: Optional[str] = None
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
+    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
 
 settings = Settings()

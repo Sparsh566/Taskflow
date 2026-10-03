@@ -261,16 +261,16 @@ export default function Sidebar({
             <NavItem id="settings" label="Settings" icon={Settings} />
           </div>
 
-          {/* Admin Only Portal Section */}
+          {/* Isolated Master Session Section (Only rendered when authenticated as master admin) */}
           {isAdmin && (
-            <div className="space-y-1 pt-2 border-t border-slate-800/80">
+            <div className="space-y-1 pt-2 border-t border-red-900/40">
               {!isCollapsed && (
                 <div className="px-3 text-[10px] font-black text-red-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                   <ShieldAlert className="w-3 h-3" />
-                  <span>Admin Zone</span>
+                  <span>Master Core</span>
                 </div>
               )}
-              <NavItem id="admin" label="Admin Console" icon={ShieldAlert} adminOnly={true} />
+              <NavItem id="admin" label="Master Console" icon={ShieldAlert} adminOnly={true} />
             </div>
           )}
 

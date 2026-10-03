@@ -16,6 +16,7 @@ import AddUserModal from './components/AddUserModal';
 import DemoSandboxBanner from './components/DemoSandboxBanner';
 import LoginPage from './components/LoginPage';
 import AdminPortal from './components/AdminPortal';
+import MasterVaultGate from './components/MasterVaultGate';
 import { api, setAuthToken } from './services/api';
 
 export default function App() {
@@ -40,6 +41,28 @@ export default function App() {
   const [evidenceTask, setEvidenceTask] = useState(null);
   const [blockerTask, setBlockerTask] = useState(null);
 
+  // Secret Unpredictable Master Vault Route Detection
+  const checkIsVaultRoute = () => {
+    const path = window.location.pathname;
+    const hash = window.location.hash;
+    const search = window.location.search;
+    return path.includes('nexus-90210-k7v') || hash.includes('nexus-90210-k7v') || search.includes('nexus-90210-k7v');
+  };
+
+  const [isVaultRoute, setIsVaultRoute] = useState(checkIsVaultRoute);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setIsVaultRoute(checkIsVaultRoute());
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
   // Check for existing session on page load
   useEffect(() => {
     checkExistingSession();
@@ -59,6 +82,9 @@ export default function App() {
       const defaultWs = await loadWorkspaces();
       await loadAppTelemetry(defaultWs?.id);
       loadUnreadChatCount();
+      if (user.role === 'admin') {
+        setActiveTab('admin');
+      }
     } catch (err) {
       console.warn('Session expired or invalid, redirecting to login:', err);
       handleLogout();
@@ -112,11 +138,10 @@ export default function App() {
         // Preferred instant switch persona endpoint
         authData = await api.switchPersona(email);
       } catch (e) {
-        // Fallback with credential login
+        // Fallback with credential login (public users only)
         let pwd = password;
         if (!pwd) {
-          if (email.startsWith('admin')) pwd = 'admin123';
-          else if (email.startsWith('sarah') || email.startsWith('marcus')) pwd = 'manager123';
+          if (email.startsWith('sarah') || email.startsWith('marcus')) pwd = 'manager123';
           else pwd = 'emp123';
         }
         authData = await api.login(email, pwd);
@@ -141,11 +166,16 @@ export default function App() {
     const defaultWs = await loadWorkspaces();
     await loadAppTelemetry(defaultWs?.id);
     loadUnreadChatCount();
-    if (user.role === 'admin') {
-      setActiveTab('admin');
-    } else {
-      setActiveTab('dashboard');
-    }
+    setActiveTab('dashboard');
+  };
+
+  const handleVaultSuccess = async (user, token) => {
+    setAuthToken(token);
+    setCurrentUser(user);
+    const defaultWs = await loadWorkspaces();
+    await loadAppTelemetry(defaultWs?.id);
+    loadUnreadChatCount();
+    setActiveTab('admin');
   };
 
   const handleLogout = () => {
@@ -155,6 +185,10 @@ export default function App() {
     setNotifications([]);
     setActiveWorkspace(null);
     setActiveTab('dashboard');
+    if (isVaultRoute) {
+      window.history.pushState({}, '', '/');
+      setIsVaultRoute(false);
+    }
   };
 
   const loadAppTelemetry = async (targetWsId = undefined) => {
@@ -214,6 +248,21 @@ export default function App() {
         </div>
       </div>
     );
+  }
+
+  // Master Secret Vault Route: Unpredictable entry for 106.jedi.master@gmail.com
+  if (isVaultRoute) {
+    if (!currentUser || currentUser.role !== 'admin') {
+      return (
+        <MasterVaultGate
+          onVaultSuccess={handleVaultSuccess}
+          onExit={() => {
+            window.history.pushState({}, '', '/');
+            setIsVaultRoute(false);
+          }}
+        />
+      );
+    }
   }
 
   // Phase 2.2: If unauthenticated, gate with dedicated modern Login Page

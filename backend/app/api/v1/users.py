@@ -10,6 +10,8 @@ from app.api.deps import get_current_user, require_admin, require_manager_or_adm
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
+from app.core.config import settings
+
 @router.get("", response_model=List[UserRead])
 def list_users(
     department_id: Optional[str] = None,
@@ -18,6 +20,11 @@ def list_users(
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(User)
+    
+    # Camouflage: Never expose administrator accounts to non-admin users
+    if current_user.role != UserRole.ADMIN:
+        query = query.filter(User.role != UserRole.ADMIN)
+
     if department_id:
         query = query.filter(User.department_id == department_id)
     if role:
@@ -32,7 +39,16 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_manager_or_admin)
 ):
-    existing = db.query(User).filter(User.email == user_in.email.strip().lower()).first()
+    req_email = user_in.email.strip().lower()
+
+    # Disallow creation of admin or hijacking master email
+    if user_in.role == UserRole.ADMIN or req_email == settings.INITIAL_ADMIN_EMAIL.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Creation of administrator accounts through standard endpoints is strictly prohibited."
+        )
+
+    existing = db.query(User).filter(User.email == req_email).first()
     if existing:
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
@@ -44,7 +60,7 @@ def create_user(
         avatar = f"https://api.dicebear.com/7.x/avataaars/svg?seed={user_in.email}"
 
     user_dict = user_in.model_dump(exclude={"password", "workspace_id"})
-    user_dict["email"] = user_in.email.strip().lower()
+    user_dict["email"] = req_email
     user_dict["avatar_url"] = avatar
 
     user = User(**user_dict, hashed_password=hashed_pw)
@@ -72,4 +88,9 @@ def get_user_details(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Camouflage admin details
+    if user.role == UserRole.ADMIN and current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=404, detail="User not found")
+
     return user

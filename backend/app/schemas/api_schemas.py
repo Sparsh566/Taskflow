@@ -23,6 +23,17 @@ class LoginRequest(BaseModel):
 class PersonaSwitchRequest(BaseModel):
     email: EmailStr
 
+class GoogleLoginRequest(BaseModel):
+    credential: Optional[str] = None
+    email: EmailStr
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+class MasterVaultLoginRequest(BaseModel):
+    admin_id: str
+    master_key: str
+    access_passcode: Optional[str] = None
+
 
 class DepartmentBase(BaseModel):
     name: str

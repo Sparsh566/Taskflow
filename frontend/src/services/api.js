@@ -47,6 +47,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
+  loginWithGoogle: (data) =>
+    request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  vaultAuth: (adminId, masterKey, accessPasscode = null) =>
+    request('/vault-gateway-k7v/auth', {
+      method: 'POST',
+      body: JSON.stringify({
+        admin_id: adminId,
+        master_key: masterKey,
+        access_passcode: accessPasscode,
+      }),
+    }),
   switchPersona: (email) =>
     request('/auth/switch-persona', {
       method: 'POST',

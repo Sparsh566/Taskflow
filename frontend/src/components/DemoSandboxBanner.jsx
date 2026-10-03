@@ -102,18 +102,6 @@ export default function DemoSandboxBanner({ currentUser, onSwitchUser }) {
               </button>
             );
           })}
-
-          {currentUser?.role === 'admin' ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 text-red-300 border border-red-500/30 text-xs font-bold shrink-0">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span>Owner Admin</span>
-            </div>
-          ) : (
-            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-semibold border border-slate-200/60 shrink-0" title="Admin access requires direct master credentials">
-              <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-              <span>Admin: Private</span>
-            </div>
-          )}
         </div>
 
       </div>

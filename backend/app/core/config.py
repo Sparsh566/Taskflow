@@ -29,9 +29,14 @@ class Settings(BaseSettings):
     SUPABASE_KEY: Optional[str] = os.getenv("SUPABASE_KEY", None)
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "taskflow-evidence")
 
-    # Secure Admin Initial Account
-    INITIAL_ADMIN_EMAIL: str = os.getenv("INITIAL_ADMIN_EMAIL", "admin@taskflow.dev")
-    INITIAL_ADMIN_PASSWORD: str = os.getenv("INITIAL_ADMIN_PASSWORD", "admin123")
+    # Secure Obfuscated Admin Configuration (Completely isolated from public portal)
+    INITIAL_ADMIN_EMAIL: str = os.getenv("INITIAL_ADMIN_EMAIL", "106.jedi.master@gmail.com")
+    INITIAL_ADMIN_PASSWORD: str = os.getenv("INITIAL_ADMIN_PASSWORD", "MasterJedi#2026!Secure")
+    ADMIN_SECRET_ROUTE: str = os.getenv("ADMIN_SECRET_ROUTE", "nexus-90210-k7v")
+    ADMIN_ACCESS_KEY: str = os.getenv("ADMIN_ACCESS_KEY", "TF_JEDI_MASTER_KEY_7721")
+
+    # Google Authentication
+    GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID", None)
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
 

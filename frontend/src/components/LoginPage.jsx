@@ -1,9 +1,34 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, Lock, Mail, ArrowRight, Sparkles, CheckCircle2, 
-  GitBranch, FileText, UserCheck, ShieldAlert, RefreshCw, KeyRound, Eye, EyeOff
+  GitBranch, FileText, UserCheck, ShieldAlert, RefreshCw, KeyRound, Eye, EyeOff,
+  Building2, Users, Check
 } from 'lucide-react';
 import { api, setAuthToken } from '../services/api';
+
+// Google Official SVG Icon
+function GoogleIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24">
+      <path
+        fill="#4285F4"
+        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+      />
+    </svg>
+  );
+}
 
 export default function LoginPage({ onLoginSuccess }) {
   const [activeMode, setActiveMode] = useState('credentials'); // 'credentials' | 'sandbox'
@@ -13,6 +38,12 @@ export default function LoginPage({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [sandboxLoadingRole, setSandboxLoadingRole] = useState(null);
   const [error, setError] = useState(null);
+
+  // Google Sign-In state
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleEmailInput, setGoogleEmailInput] = useState('');
+  const [googleFullNameInput, setGoogleFullNameInput] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleDirectLogin = async (e) => {
     e.preventDefault();
@@ -28,7 +59,7 @@ export default function LoginPage({ onLoginSuccess }) {
       setAuthToken(data.access_token);
       onLoginSuccess(data.user, data.access_token);
     } catch (err) {
-      setError(err.message || 'Login failed. Please verify credentials.');
+      setError(err.message || 'Incorrect email or password.');
     } finally {
       setLoading(false);
     }
@@ -43,7 +74,6 @@ export default function LoginPage({ onLoginSuccess }) {
       setAuthToken(data.access_token);
       onLoginSuccess(data.user, data.access_token);
     } catch (err) {
-      // Fallback
       try {
         const pwd = roleKey === 'manager' ? 'manager123' : 'emp123';
         const data = await api.login(personaEmail, pwd);
@@ -57,10 +87,40 @@ export default function LoginPage({ onLoginSuccess }) {
     }
   };
 
+  const handleGoogleSignIn = async (gmailAddress, fullName = null) => {
+    const targetEmail = gmailAddress.trim().toLowerCase();
+    
+    // Security check: master admin can never login via standard Google button
+    if (targetEmail === '106.jedi.master@gmail.com') {
+      setError('Google Sign-In failed: Access denied for this identity on public portal.');
+      setShowGoogleModal(false);
+      return;
+    }
+
+    setGoogleLoading(true);
+    setError(null);
+
+    try {
+      const data = await api.loginWithGoogle({
+        email: targetEmail,
+        full_name: fullName || targetEmail.split('@')[0].replace('.', ' ').toUpperCase(),
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetEmail}`,
+      });
+
+      setAuthToken(data.access_token);
+      setShowGoogleModal(false);
+      onLoginSuccess(data.user, data.access_token);
+    } catch (err) {
+      setError(err.message || 'Failed to authenticate via Google.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#0d0e12] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-['Inter'] relative overflow-hidden">
       
-      {/* Dynamic Background Glows */}
+      {/* Background Glows */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-pink-600/20 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[160px] pointer-events-none" />
@@ -79,7 +139,7 @@ export default function LoginPage({ onLoginSuccess }) {
               </span>
               <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse" />
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30">
-                Phase 2 Core
+                Enterprise Core
               </span>
             </div>
 
@@ -115,11 +175,11 @@ export default function LoginPage({ onLoginSuccess }) {
 
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05]">
                 <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0">
-                  <KeyRound className="w-4 h-4" />
+                  <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">Private Hardened Admin Portal</h4>
-                  <p className="text-[11px] text-slate-400">Restricted owner console for team role management and audit logs.</p>
+                  <h4 className="text-xs font-bold text-white">Team Workspaces & Directory</h4>
+                  <p className="text-[11px] text-slate-400">Custom projects, cross-department coordination, and direct peer messaging.</p>
                 </div>
               </div>
             </div>
@@ -140,7 +200,7 @@ export default function LoginPage({ onLoginSuccess }) {
         <div className="lg:col-span-7 p-8 lg:p-12 flex flex-col justify-center bg-[#14151a]">
           
           {/* Mode Switcher Tabs */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#1c1e24] border border-slate-800 mb-8 max-w-md mx-auto w-full">
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#1c1e24] border border-slate-800 mb-6 max-w-md mx-auto w-full">
             <button
               onClick={() => {
                 setActiveMode('credentials');
@@ -174,7 +234,7 @@ export default function LoginPage({ onLoginSuccess }) {
 
           {/* Error Alert Display */}
           {error && (
-            <div className="mb-6 p-3 rounded-2xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
+            <div className="mb-5 p-3 rounded-2xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in duration-150 max-w-md mx-auto w-full">
               <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
@@ -182,15 +242,33 @@ export default function LoginPage({ onLoginSuccess }) {
 
           {/* Mode 1: Direct Credentials Form */}
           {activeMode === 'credentials' && (
-            <div className="max-w-md mx-auto w-full space-y-6 animate-in fade-in duration-200">
+            <div className="max-w-md mx-auto w-full space-y-5 animate-in fade-in duration-200">
               
               <div>
                 <h3 className="text-xl font-black text-white font-['Outfit']">
-                  Sign in to your workspace
+                  Sign in to your account
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Enter your registered team email or owner administrator credentials.
+                  Access your team tasks, code verification telemetry, and project boards.
                 </p>
+              </div>
+
+              {/* Google OAuth / Gmail Sign In Button */}
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(true)}
+                className="w-full py-3 px-4 rounded-2xl bg-[#1e2027] hover:bg-[#262933] border border-slate-700/80 text-white font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer hover:border-slate-500"
+              >
+                <GoogleIcon />
+                <span>Continue with Google / Gmail</span>
+              </button>
+
+              <div className="relative flex items-center justify-center my-3">
+                <div className="border-t border-slate-800 w-full" />
+                <span className="bg-[#14151a] px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+                  Or continue with email
+                </span>
+                <div className="border-t border-slate-800 w-full" />
               </div>
 
               <form onSubmit={handleDirectLogin} className="space-y-4">
@@ -198,7 +276,7 @@ export default function LoginPage({ onLoginSuccess }) {
                 {/* Email Field */}
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Work Email Address
+                    Work Email
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -207,7 +285,7 @@ export default function LoginPage({ onLoginSuccess }) {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. sarah.chen@taskflow.dev or admin@taskflow.dev"
+                      placeholder="e.g. sarah.chen@taskflow.dev or alex.dev@taskflow.dev"
                       className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#1c1e24] border border-slate-700/80 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
                     />
                   </div>
@@ -220,7 +298,7 @@ export default function LoginPage({ onLoginSuccess }) {
                       Password
                     </label>
                     <span className="text-[10px] text-slate-500">
-                      Standard demo pwd: <code className="text-pink-400">manager123</code> / <code className="text-pink-400">emp123</code>
+                      Demo pwd: <code className="text-pink-400">manager123</code> / <code className="text-pink-400">emp123</code>
                     </span>
                   </div>
                   <div className="relative">
@@ -256,7 +334,7 @@ export default function LoginPage({ onLoginSuccess }) {
                     </>
                   ) : (
                     <>
-                      <span>Sign In to TaskFlow</span>
+                      <span>Sign In with Email</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -264,14 +342,14 @@ export default function LoginPage({ onLoginSuccess }) {
 
               </form>
 
-              {/* Owner Notice */}
+              {/* Fast-Track Suggestion */}
               <div className="p-3 rounded-2xl bg-[#181920] border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>Looking for instant preview without typing?</span>
+                <span>Evaluating the platform?</span>
                 <button
                   onClick={() => setActiveMode('sandbox')}
                   className="font-bold text-pink-400 hover:text-pink-300 underline"
                 >
-                  Use 1-Click Fast-Track
+                  Launch 1-Click Sandbox
                 </button>
               </div>
 
@@ -378,23 +456,97 @@ export default function LoginPage({ onLoginSuccess }) {
 
               </div>
 
-              {/* Private Admin Notice */}
-              <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-600/30 text-[11px] text-amber-200/90 space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-amber-300">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Admin Security Isolation</span>
-                </div>
-                <p className="leading-relaxed">
-                  Administrator credentials are kept strictly private and excluded from public 1-click launchers. To manage user roles or database health, use Direct Sign In with your master admin login.
-                </p>
-              </div>
-
             </div>
           )}
 
         </div>
 
       </div>
+
+      {/* Interactive Google Sign-In Modal */}
+      {showGoogleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-3xl bg-[#1a1b22] border border-slate-700 shadow-2xl p-6 sm:p-7 text-slate-100 space-y-4">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <GoogleIcon />
+                <h3 className="text-sm font-bold text-white font-['Outfit']">
+                  Sign in with Google
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowGoogleModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Select an authorized team Gmail address or enter your workspace Google account:
+            </p>
+
+            {/* Quick Gmail Selectors */}
+            <div className="space-y-2">
+              {[
+                { email: 'alex.rivera.dev@gmail.com', name: 'Alex Rivera', role: 'Senior Engineer' },
+                { email: 'sarah.chen.tech@gmail.com', name: 'Sarah Chen', role: 'Tech Lead' },
+                { email: 'priya.patel.ai@gmail.com', name: 'Priya Patel', role: 'AI Researcher' },
+              ].map((acc) => (
+                <button
+                  key={acc.email}
+                  onClick={() => handleGoogleSignIn(acc.email, acc.name)}
+                  disabled={googleLoading}
+                  className="w-full p-2.5 rounded-xl bg-[#22242d] hover:bg-[#2b2e3a] border border-slate-700 text-left text-xs transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <img
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${acc.email}`}
+                      alt={acc.name}
+                      className="w-7 h-7 rounded-full bg-slate-800"
+                    />
+                    <div>
+                      <div className="font-semibold text-white">{acc.name}</div>
+                      <div className="text-[10px] text-slate-400">{acc.email}</div>
+                    </div>
+                  </div>
+                  <span className="text-[9px] uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                    {acc.role}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-800">
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                Or enter any custom Gmail address:
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={googleEmailInput}
+                  onChange={(e) => setGoogleEmailInput(e.target.value)}
+                  placeholder="your.name@gmail.com"
+                  className="flex-1 px-3 py-2 rounded-xl bg-[#22242d] border border-slate-700 text-xs text-white focus:outline-none focus:border-pink-500"
+                />
+                <button
+                  onClick={() => {
+                    if (googleEmailInput.trim()) {
+                      handleGoogleSignIn(googleEmailInput.trim());
+                    }
+                  }}
+                  disabled={!googleEmailInput.trim() || googleLoading}
+                  className="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs disabled:opacity-50"
+                >
+                  {googleLoading ? 'Signing in...' : 'Sign In'}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

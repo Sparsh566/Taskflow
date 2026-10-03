@@ -40,6 +40,19 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         init_seed_data(db)
+        # Ensure master admin account matches settings.INITIAL_ADMIN_EMAIL
+        from app.models.entities import User
+        from app.models.enums import UserRole
+        from app.core.security import get_password_hash
+        admin_user = db.query(User).filter(User.role == UserRole.ADMIN).first()
+        if admin_user and admin_user.email != settings.INITIAL_ADMIN_EMAIL:
+            admin_user.email = settings.INITIAL_ADMIN_EMAIL
+            admin_user.hashed_password = get_password_hash(settings.INITIAL_ADMIN_PASSWORD)
+            admin_user.full_name = "Master Administrator"
+            db.commit()
+            print(f"[TaskFlow] Synchronized master admin email to {settings.INITIAL_ADMIN_EMAIL}")
+    except Exception as err:
+        print(f"[TaskFlow] Seed / sync warning: {err}")
     finally:
         db.close()
     yield
